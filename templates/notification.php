@@ -5,16 +5,13 @@
  */
 ?>
 
-<?php if ($submission_result): ?>
-    <div class="alert alert-<?php echo $submission_prepared['success'] ? 'success' : 'danger'; ?>">
-        <?php echo htmlspecialchars($submission_result['message']); ?>
+
+<?php if (!empty($submission_result)): ?>
+    <div class="<?php
+        echo $submission_result['success']
+            ? 'alert alert-success'
+            : 'alert bg-warning';
+    ?>">
+        <p><?php echo esc_html($submission_result['message']); ?></p>
     </div>
 <?php endif; ?>
-
-<div class="<?php 
-    echo $submission_result['success'] 
-        ? 'alert alert-success'
-        : 'notice notice-error';
-?>">
-    <p><?php echo htmlspecialchars($submission_result['message']); ?></p>
-</div>

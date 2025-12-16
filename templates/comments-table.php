@@ -26,7 +26,7 @@
                         <td class="fw-bold"><?php echo htmlspecialchars($comment->id); ?></td>
                         <td><?php echo htmlspecialchars($comment->name); ?></td>
                         <td>
-                            <div class="text-truncate" style="max-width: 300px;">
+                            <div class="text-wrap w-100">
                                 <?php echo htmlspecialchars($comment->comment); ?>
                             </div>
                         </td>
