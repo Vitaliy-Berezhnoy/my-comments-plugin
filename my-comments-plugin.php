@@ -57,14 +57,34 @@ function handle_comment_submission() {
 }
 
 // Функция для отображения таблицы
-function display_comments_table($table_id = 'comments-table') {
+function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'proposals_and_comments';
 
-    // Получаем комментарии
-    $comments = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC");
+    // Текущая страница
+    $current_page = max(1, get_query_var('paged', 1));
+    $offset = ($current_page - 1) * $per_page;
 
-    // Подключаем шаблон, передавая данные
+    // Общее количество
+    $total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+
+    // Получаем комментарии с лимитом
+    $comments = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT * FROM $table_name
+             ORDER BY created_at DESC
+             LIMIT %d OFFSET %d",
+            $per_page, $offset
+        )
+    );
+
+    // Передаем данные для пагинации в шаблон
+    $pagination_data = [
+        'total' => $total,
+        'per_page' => $per_page,
+        'current_page' => $current_page
+    ];
+
     include plugin_dir_path(__FILE__) . 'templates/comments-table.php';
 }
 
