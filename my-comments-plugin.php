@@ -61,8 +61,17 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'proposals_and_comments';
 
-    // Текущая страница
-    $current_page = max(1, get_query_var('paged', 1));
+    // Определяем текущую страницу, учитывая оба формата URL
+    if (get_query_var('paged')) {
+        $current_page = get_query_var('paged');
+    } elseif (get_query_var('page')) {
+        $current_page = get_query_var('page');
+    } else {
+        $current_page = 1;
+    }
+    $current_page = max(1, intval($current_page));
+
+    // Определяем смещение для SQL-запроса
     $offset = ($current_page - 1) * $per_page;
 
     // Общее количество
