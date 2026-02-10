@@ -12,7 +12,11 @@
                 class="form-control"
                 id="comment_name"
                 name="comment_name"
-                value="<?php echo isset($_POST['comment_name']) ? htmlspecialchars($_POST['comment_name']) : '' ?>"
+                value="<?php
+                    if (isset($submission_result) && !$submission_result['success']) {
+                        echo isset($_POST['comment_name']) ? htmlspecialchars($_POST['comment_name']) : '';
+                    }
+                ?>"
                 placeholder="Введите ваше имя"
             >
             <div class="invalid-feedback">
@@ -32,7 +36,9 @@
         rows="4"
         placeholder="Поделитесь своими впечатлениями, замечаниями или предложениями с автором сайта."
     ><?php
-        echo isset($_POST['comment_text']) ? esc_textarea($_POST['comment_text']) : '';
+        if (isset($submission_result) && !$submission_result['success']) {
+            echo isset($_POST['comment_text']) ? esc_textarea($_POST['comment_text']) : '';
+        }        
     ?></textarea>
     <div class="invalid-feedback">
         Пожалуйста, введите комментарий.

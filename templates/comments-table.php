@@ -1,6 +1,6 @@
 <?php
 /**
- * Template for displaying comments table (enhanced with Bootstrap)
+ * Шаблон для отображения таблицы с комментариями (с использованием Bootstrap)
  * @var array $comments List of comment objects
  * @var string $table_id Optional table ID
  * @var array $pagination_data Data for pagination (NEW)
