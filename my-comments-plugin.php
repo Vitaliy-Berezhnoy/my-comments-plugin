@@ -6,25 +6,42 @@
  * Author: Vitaliy Berezhnoy
  */
 
-// Подключаем файл с функциями БД
-if ( ! function_exists('create_proposals_comments_table')) {
+// Создаём таблицу в БД при активации плагина
+if ( !function_exists('create_proposals_comments_table')) {
     require_once plugin_dir_path( __FILE__ ) . 'includes/database.php';
 }
-
-
-// Создаём таблицу при активации
 register_activation_hook( __FILE__, 'create_proposals_comments_table' );
 
-// Обработчик отправки формы
-function handle_comment_submission() {
-    // Проверяем nonce
-    if (!isset($_POST['add_comment_nonce']) || !wp_verify_nonce($_POST['add_comment_nonce'], 'add_comment_action')) {
-        return;
+// Начинаем сессию
+add_action('init', function() {
+    if (!session_id() && !headers_sent()) {
+        session_start();
+    }
+});
+// Обработка комментария
+add_action('init', 'save_сomment');
+
+add_action('wp_enqueue_scripts', function() {
+    // CSS
+    wp_enqueue_style(
+        'bootstrap-local',
+        plugin_dir_url(__FILE__) . 'assets/css/bootstrap.min.css',
+        [],
+        '5.3.8'  // версия Bootstrap
+    );
+});
+
+add_shortcode('show_comments', 'comments_shortcode');
+
+function save_сomment() {
+    // Проверяем, что это POST запрос с нашей формы
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_comment'])) {
+        return false;
     }
 
-    // Проверяем метод запроса
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_comment'])) {
-        return;
+    // Проверяем nonce
+    if (!isset($_POST['add_comment_nonce']) || !wp_verify_nonce($_POST['add_comment_nonce'], 'add_comment_action')) {
+        return false;
     }
 
     // Санизируем данные
@@ -33,7 +50,12 @@ function handle_comment_submission() {
 
     //  Проверяем обязательные поля
     if (empty($name) || empty($comment)) {
-        return ['success' => false, 'message' => 'Заполните все поля.'];
+        $_SESSION['comment_status'] = [
+            'success' => false,
+            'type' => 'warning',
+            'message' => 'Заполните все поля!'
+        ];
+        return false;
     }
 
     // Сохраняем в БД
@@ -51,9 +73,22 @@ function handle_comment_submission() {
 
     // Сообщение об успехе/ошибке
     if ($result) {
-        return ['success' => true, 'message' => 'Комментарий добавлен!'];
+        $_SESSION['comment_status'] = [
+            'success' => true,
+            'type' => 'success',
+            'message' => 'Комментарий добавлен!'
+        ];
+    } else {
+        $_SESSION['comment_status'] = [
+            'success' => false,
+            'type' => 'error',
+            'message' => 'Ошибка при записи комментария в БД!'
+        ];
+        return false;
     }
-    return ['success' => false, 'message' => 'Ошибка при добавлении комментария.'];
+    // Редирект ДО начала вывода контента
+    wp_safe_redirect($_SERVER['REQUEST_URI']);
+    exit;
 }
 
 // Функция для отображения таблицы
@@ -99,37 +134,24 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
 
 function comments_shortcode() {
     ob_start();
-    
-    // Обрабатываем отправку и получаем результат
-    $submission_result = handle_comment_submission();
 
-    // Если была отправка, показываем уведомление
-    if ($submission_result) {
+    // Проверяем сообщения в сессии
+    if (isset($_SESSION['comment_status'])) {
         include plugin_dir_path(__FILE__) . 'templates/notification.php';
+        $commentSaveSuccess = $_SESSION['comment_status']['success'];
+        // Очищаем сообщения
+        unset($_SESSION['comment_status']);
     }
 
-    // Выводим форму (передаём предыдущие значения, если они есть)
+    // Выводим форму
     include plugin_dir_path(__FILE__) . 'templates/comment-form.php';
 
     // Выводим таблицу комментариев ТОЛЬКО если:
     // - не было отправки формы ИЛИ
     // - отправка прошла успешно
-    if (!$submission_result || $submission_result['success']) {
+    if (!isset($commentSaveSuccess) || $commentSaveSuccess) {
         display_comments_table();
     }
 
     return ob_get_clean();
 }
-
-
-add_shortcode('show_comments', 'comments_shortcode');
-
-add_action('wp_enqueue_scripts', function() {
-    // CSS
-    wp_enqueue_style(
-        'bootstrap-local',
-        plugin_dir_url(__FILE__) . 'assets/css/bootstrap.min.css',
-        [],
-        '5.3.8'  // версия Bootstrap
-    );
-});
