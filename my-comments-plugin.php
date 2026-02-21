@@ -6,11 +6,23 @@
  * Author: Vitaliy Berezhnoy
  */
 
-// Создаём таблицу в БД при активации плагина
-if ( !function_exists('create_proposals_comments_table')) {
-    require_once plugin_dir_path( __FILE__ ) . 'includes/database.php';
+// Название таблицы для хранения комментариев одинаковое в обеих БД.
+const TABLE_NAME = 'proposals_and_comments';
+
+require_once plugin_dir_path(__FILE__) . 'Database/PG_DB_Handler.php';
+
+
+// Создаём таблицу в БД Mysql при активации плагина
+if ( !function_exists('create_table_in_mysql')) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/db-mysql.php';
 }
-register_activation_hook( __FILE__, 'create_proposals_comments_table' );
+register_activation_hook( __FILE__, 'create_table_in_mysql' );
+
+// Создаём таблицу в БД PostgreSQL при активации плагина
+if (!function_exists('create_table_in_postgresql')) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/db-postgresql.php';
+}
+register_activation_hook( __FILE__, 'create_table_in_postgresql' );
 
 // Начинаем сессию
 add_action('init', function() {
@@ -21,6 +33,7 @@ add_action('init', function() {
 // Обработка комментария
 add_action('init', 'save_сomment');
 
+// Подключаем bootstrap-local
 add_action('wp_enqueue_scripts', function() {
     // CSS
     wp_enqueue_style(
@@ -60,7 +73,7 @@ function save_сomment() {
 
     // Сохраняем в БД
     global $wpdb;
-    $table_name = $wpdb->prefix . 'proposals_and_comments';
+    $table_name = $wpdb->prefix . TABLE_NAME;
 
     $result = $wpdb->insert(
         $table_name,
@@ -94,7 +107,7 @@ function save_сomment() {
 // Функция для отображения таблицы
 function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'proposals_and_comments';
+    $table_name = $wpdb->prefix . TABLE_NAME;
 
     // Определяем текущую страницу, учитывая оба формата URL
     if (get_query_var('paged')) {

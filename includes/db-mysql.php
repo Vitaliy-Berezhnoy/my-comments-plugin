@@ -7,9 +7,9 @@
 /**
  * Создаёт таблицу для комментариев при активации плагина
  */
-function create_proposals_comments_table() {
+function create_table_in_mysql() {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'proposals_and_comments';
+    $table_name = $wpdb->prefix . TABLE_NAME;
 
     $sql = "CREATE TABLE $table_name (
         id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
