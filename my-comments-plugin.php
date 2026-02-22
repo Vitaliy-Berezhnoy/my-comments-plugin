@@ -33,6 +33,9 @@ add_action('init', function() {
 // Обработка комментария
 add_action('init', 'save_сomment');
 
+// Обработка переключателя БД
+add_action('init', 'handle_db_switcher_submission');
+
 // Подключаем bootstrap-local
 add_action('wp_enqueue_scripts', function() {
     // CSS
@@ -46,6 +49,7 @@ add_action('wp_enqueue_scripts', function() {
 
 add_shortcode('show_comments', 'comments_shortcode');
 
+// Функция для обработки POST запроса от формы ввода комментария
 function save_сomment() {
     // Проверяем, что это POST запрос с нашей формы
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_comment'])) {
@@ -104,6 +108,28 @@ function save_сomment() {
     exit;
 }
 
+// Функция для обработки POST запроса от формы переключения БД
+function handle_db_switcher_submission() {
+    if (isset($_POST['save_db_choice']) && wp_verify_nonce($_POST['save_db_choice_nonce'], 'save_db_choice_action')) {
+        $selected_db = sanitize_text_field($_POST['db_choice']);
+
+        // Сохраняем в cookie (на 3 дня)
+        setcookie(
+            'current_db',
+            $selected_db,
+            time() + (86400 * 3),
+            '/',
+            '',
+            false,
+            true
+        );
+
+        wp_safe_redirect($_SERVER['REQUEST_URI']);
+        exit;
+    }
+    return false;
+}
+
 // Функция для отображения таблицы
 function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     global $wpdb;
@@ -145,6 +171,13 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     include plugin_dir_path(__FILE__) . 'templates/comments-table.php';
 }
 
+function get_name_active_db() {
+    if (isset($_COOKIE['current_db'])) {
+        return sanitize_text_field($_COOKIE['current_db']);
+    }
+    return 'mysql';     // БД по умолчанию mysql
+}
+
 function comments_shortcode() {
     ob_start();
 
@@ -156,11 +189,15 @@ function comments_shortcode() {
         unset($_SESSION['comment_status']);
     }
 
-    // Выводим форму
+    // Выводим форму ввода комментария
     include plugin_dir_path(__FILE__) . 'templates/comment-form.php';
 
+    // Выводим форму переключателя БД
+    $current_db = get_name_active_db();    
+    include plugin_dir_path(__FILE__) . 'templates/db-switcher.php';
+
     // Выводим таблицу комментариев ТОЛЬКО если:
-    // - не было отправки формы ИЛИ
+    // - не было отправки формы ввода комментария ИЛИ
     // - отправка прошла успешно
     if (!isset($commentSaveSuccess) || $commentSaveSuccess) {
         display_comments_table();
