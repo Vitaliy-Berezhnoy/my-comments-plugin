@@ -10,6 +10,7 @@
 const TABLE_NAME = 'proposals_and_comments';
 
 require_once plugin_dir_path(__FILE__) . 'Database/PG_DB_Handler.php';
+require_once plugin_dir_path(__FILE__) . 'includes/pdo_connect.php';
 
 
 // Создаём таблицу в БД Mysql при активации плагина
@@ -75,18 +76,33 @@ function save_сomment() {
         return false;
     }
 
-    // Сохраняем в БД
-    global $wpdb;
-    $table_name = $wpdb->prefix . TABLE_NAME;
+    // Сохраняем в одну из БД PostgreSQL или MySQL
+    $current_db = get_name_active_db();
 
-    $result = $wpdb->insert(
-        $table_name,
-        array(
-            'name' => $name,
-            'comment' => $comment
-        ),
-        array('%s', '%s')
-    );
+    if ($current_db === 'postgres') {
+        $pg = new PG_DB_Handler();
+
+        $sql = 'INSERT INTO ' . TABLE_NAME . ' (name, comment) VALUES ($1, $2)';
+        $params = [$name, $comment];
+
+        try {
+            $result = $pg->query($sql, $params);
+        } finally {
+            $pg->close();
+        }
+    } else {
+        global $wpdb;
+        $table_name = $wpdb->prefix . TABLE_NAME;
+
+        $result = $wpdb->insert(
+            $table_name,
+            array(
+                'name' => $name,
+                'comment' => $comment
+            ),
+            array('%s', '%s')
+        );        
+    }
 
     // Сообщение об успехе/ошибке
     if ($result) {
@@ -101,7 +117,6 @@ function save_сomment() {
             'type' => 'error',
             'message' => 'Ошибка при записи комментария в БД!'
         ];
-        return false;
     }
     // Редирект ДО начала вывода контента
     wp_safe_redirect($_SERVER['REQUEST_URI']);
@@ -124,6 +139,7 @@ function handle_db_switcher_submission() {
             true
         );
 
+        // Редирект ДО начала вывода контента
         wp_safe_redirect($_SERVER['REQUEST_URI']);
         exit;
     }
@@ -149,17 +165,32 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     $offset = ($current_page - 1) * $per_page;
 
     // Общее количество
-    $total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+    //$total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+    $pdo = pdo_connect_mysql();
+    $sql1 = "SELECT COUNT(*) AS total FROM $table_name";
+    $stmt = $pdo->query($sql1);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $total = $row ? (int)$row['total'] : 0;
 
     // Получаем комментарии с лимитом
-    $comments = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT * FROM $table_name
+
+    //$comments = $wpdb->get_results(
+    //    $wpdb->prepare(
+    //        "SELECT * FROM $table_name
+    //         ORDER BY created_at DESC
+    //         LIMIT %d OFFSET %d",
+    //        $per_page, $offset
+    //    )
+    //);
+    $sql2 = "SELECT * FROM $table_name
              ORDER BY created_at DESC
-             LIMIT %d OFFSET %d",
-            $per_page, $offset
-        )
-    );
+             LIMIT :limit OFFSET :offset";
+    $stmy2 = $pdo->prepare($sql2);
+    $stmy2->bindParam(':limit', $per_page, PDO::PARAM_INT);
+    $stmy2->bindParam(':offset', $offset, PDO::PARAM_INT);
+    $stmy2->execute();
+    $comments = $stmy2->fetchAll(PDO::FETCH_OBJ);
+
 
     // Передаем данные для пагинации в шаблон
     $pagination_data = [
