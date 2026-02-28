@@ -9,9 +9,10 @@
 // Название таблицы для хранения комментариев одинаковое в обеих БД.
 const TABLE_NAME = 'proposals_and_comments';
 
+require_once plugin_dir_path(__FILE__) . 'includes/table_name.php';
 require_once plugin_dir_path(__FILE__) . 'Database/PG_DB_Handler.php';
 require_once plugin_dir_path(__FILE__) . 'includes/pdo_connect.php';
-
+require_once plugin_dir_path(__FILE__) . 'includes/selected_db.php';
 
 // Создаём таблицу в БД Mysql при активации плагина
 if ( !function_exists('create_table_in_mysql')) {
@@ -76,36 +77,54 @@ function save_сomment() {
         return false;
     }
 
-    // Сохраняем в одну из БД PostgreSQL или MySQL
-    $current_db = get_name_active_db();
+    // Сохраняем комментарий в одну из БД PostgreSQL или MySQL
+    $table_name = get_table_name();
+    $pdo = get_pdo_active_db();
 
-    if ($current_db === 'postgres') {
-        $pg = new PG_DB_Handler();
+    $sql = "INSERT INTO $table_name (name, comment) VALUES (:name, :comment);";
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+    $stmt->bindParam(':comment', $comment, PDO::PARAM_STR);
 
-        $sql = 'INSERT INTO ' . TABLE_NAME . ' (name, comment) VALUES ($1, $2)';
-        $params = [$name, $comment];
-
-        try {
-            $result = $pg->query($sql, $params);
-        } finally {
-            $pg->close();
-        }
-    } else {
-        global $wpdb;
-        $table_name = $wpdb->prefix . TABLE_NAME;
-
-        $result = $wpdb->insert(
-            $table_name,
-            array(
-                'name' => $name,
-                'comment' => $comment
-            ),
-            array('%s', '%s')
-        );        
+    try {
+        $stmt->execute();
+        $success = true;
+        $pdo = null;
+        $stmt = null;
+    } catch(PDOException $e) {
+        error_log(message: "Error writing a comment to the database: " . $e);
+        $success = false;
+        $pdo = null;
+        $stmt = null;
     }
 
+    //$current_db = get_name_active_db();
+    //if ($current_db === 'postgres') {
+    //    $pg = new PG_DB_Handler();
+
+    //    $sql = 'INSERT INTO $table_name (name, comment) VALUES ($1, $2)';
+    //    $params = [$name, $comment];
+
+    //    try {
+    //        $result = $pg->query($sql, $params);
+    //    } finally {
+    //        $pg->close();
+    //    }
+    //} else {
+    //    global $wpdb;
+
+    //    $result = $wpdb->insert(
+    //        $table_name,
+    //        array(
+    //            'name' => $name,
+    //            'comment' => $comment
+    //        ),
+    //        array('%s', '%s')
+    //    );        
+    //}
+
     // Сообщение об успехе/ошибке
-    if ($result) {
+    if ($success) {
         $_SESSION['comment_status'] = [
             'success' => true,
             'type' => 'success',
@@ -148,8 +167,7 @@ function handle_db_switcher_submission() {
 
 // Функция для отображения таблицы
 function display_comments_table($table_id = 'comments-table', $per_page = 5) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . TABLE_NAME;
+    $table_name = get_table_name();
 
     // Определяем текущую страницу, учитывая оба формата URL
     if (get_query_var('paged')) {
@@ -164,9 +182,9 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     // Определяем смещение для SQL-запроса
     $offset = ($current_page - 1) * $per_page;
 
-    // Общее количество
+    // Определяем общее количество строк в таблице
     //$total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
-    $pdo = pdo_connect_mysql();
+    $pdo = get_pdo_active_db();
     $sql1 = "SELECT COUNT(*) AS total FROM $table_name";
     $stmt = $pdo->query($sql1);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -200,13 +218,6 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     ];
 
     include plugin_dir_path(__FILE__) . 'templates/comments-table.php';
-}
-
-function get_name_active_db() {
-    if (isset($_COOKIE['current_db'])) {
-        return sanitize_text_field($_COOKIE['current_db']);
-    }
-    return 'mysql';     // БД по умолчанию mysql
 }
 
 function comments_shortcode() {
