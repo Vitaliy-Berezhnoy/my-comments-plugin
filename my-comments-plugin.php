@@ -27,11 +27,12 @@ if (!function_exists('create_table_in_postgresql')) {
 register_activation_hook( __FILE__, 'create_table_in_postgresql' );
 
 // Начинаем сессию
-add_action('init', function() {
-    if (!session_id() && !headers_sent()) {
-        session_start();
-    }
-});
+//add_action('init', function() {
+    //if (!session_id() && !headers_sent()) {
+    //    session_start();
+    //}
+//});
+
 // Обработка комментария
 add_action('init', 'save_сomment');
 
@@ -69,11 +70,15 @@ function save_сomment() {
 
     //  Проверяем обязательные поля
     if (empty($name) || empty($comment)) {
-        $_SESSION['comment_status'] = [
-            'success' => false,
-            'type' => 'warning',
-            'message' => 'Заполните все поля!'
-        ];
+        set_transient(
+            'key_123',
+            [
+                'success' => false,
+                'type' => 'warning',
+                'message' => 'Заполните все поля!'
+            ],
+            180  // время жизни в секундах
+        );
         return false;
     }
 
@@ -88,55 +93,27 @@ function save_сomment() {
 
     try {
         $stmt->execute();
-        $success = true;
-        $pdo = null;
-        $stmt = null;
-    } catch(PDOException $e) {
-        error_log(message: "Error writing a comment to the database: " . $e);
-        $success = false;
-        $pdo = null;
-        $stmt = null;
-    }
-
-    //$current_db = get_name_active_db();
-    //if ($current_db === 'postgres') {
-    //    $pg = new PG_DB_Handler();
-
-    //    $sql = 'INSERT INTO $table_name (name, comment) VALUES ($1, $2)';
-    //    $params = [$name, $comment];
-
-    //    try {
-    //        $result = $pg->query($sql, $params);
-    //    } finally {
-    //        $pg->close();
-    //    }
-    //} else {
-    //    global $wpdb;
-
-    //    $result = $wpdb->insert(
-    //        $table_name,
-    //        array(
-    //            'name' => $name,
-    //            'comment' => $comment
-    //        ),
-    //        array('%s', '%s')
-    //    );        
-    //}
-
-    // Сообщение об успехе/ошибке
-    if ($success) {
-        $_SESSION['comment_status'] = [
+        $comment_status = [
             'success' => true,
             'type' => 'success',
             'message' => 'Комментарий добавлен!'
         ];
-    } else {
-        $_SESSION['comment_status'] = [
+        $pdo = null;
+        $stmt = null;
+    } catch(PDOException $e) {
+        error_log(message: "Error writing a comment to the database: " . $e);
+        $comment_status = [
             'success' => false,
             'type' => 'error',
             'message' => 'Ошибка при записи комментария в БД!'
         ];
+        $pdo = null;
+        $stmt = null;
     }
+
+    // Временно сохраняем сообщение об успехе/ошибке
+    set_transient('key_123', $comment_status, 180);  // время жизни 180 секунд
+
     // Редирект ДО начала вывода контента
     wp_safe_redirect($_SERVER['REQUEST_URI']);
     exit;
@@ -183,7 +160,6 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     $offset = ($current_page - 1) * $per_page;
 
     // Определяем общее количество строк в таблице
-    //$total = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
     $pdo = get_pdo_active_db();
     $sql1 = "SELECT COUNT(*) AS total FROM $table_name";
     $stmt = $pdo->query($sql1);
@@ -191,15 +167,6 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     $total = $row ? (int)$row['total'] : 0;
 
     // Получаем комментарии с лимитом
-
-    //$comments = $wpdb->get_results(
-    //    $wpdb->prepare(
-    //        "SELECT * FROM $table_name
-    //         ORDER BY created_at DESC
-    //         LIMIT %d OFFSET %d",
-    //        $per_page, $offset
-    //    )
-    //);
     $sql2 = "SELECT * FROM $table_name
              ORDER BY created_at DESC
              LIMIT :limit OFFSET :offset";
@@ -223,12 +190,16 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
 function comments_shortcode() {
     ob_start();
 
-    // Проверяем сообщения в сессии
-    if (isset($_SESSION['comment_status'])) {
+    // Получаем статус комментария из transient 
+    $comment_status = get_transient('key_123');
+
+    // Если есть статус - показываем уведомление
+    if ($comment_status) {
         include plugin_dir_path(__FILE__) . 'templates/notification.php';
-        $commentSaveSuccess = $_SESSION['comment_status']['success'];
-        // Очищаем сообщения
-        unset($_SESSION['comment_status']);
+        $commentSaveSuccess = $comment_status['success'];
+
+        // Удаляем transient после использования
+        delete_transient('key_123');
     }
 
     // Выводим форму ввода комментария
