@@ -3,59 +3,107 @@
  * Шаблон для отображения таблицы с комментариями (с использованием Bootstrap)
  * @var array $comments List of comment objects
  * @var string $table_id Optional table ID
- * @var array $pagination_data Data for pagination (NEW)
+ * @var array $pagination_data Data for pagination
  */
 ?>
+
 <?php if (empty($comments)): ?>
     <div class="alert alert-info" role="alert">
         <?php esc_html_e('Комментариев пока нет.', 'my-comments'); ?>
     </div>
 <?php else: ?>
-    <!--  Пагинация сверху -->
-    <?php if (!empty($pagination_data) && $pagination_data['total'] > $pagination_data['per_page']): ?>
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="text-muted small">
-                <?php printf(
-                    esc_html__('Показано %d из %d комментариев', 'my-comments'),
-                    count($comments),
-                    $pagination_data['total']
-                ); ?>
-            </div>
-            <?php include plugin_dir_path(__FILE__) . 'pagination.php'; ?>
+    <!-- Основная форма выбора комментариев -->
+    <form method="post" action="" id="delete-comments-form">
+        <?php wp_nonce_field('delete_comments_action', 'delete_comments_nonce'); ?>
+    <!--    <input type="hidden" name="show_confirm" value="1">  -->
+        
+        <!-- Пагинация сверху -->
+        <div class="d-flex justify-content-between align-items-center mb-3">            
+            <?php if (!empty($pagination_data) && $pagination_data['total'] > $pagination_data['per_page']): ?>
+                <div class="text-muted small">
+                    <?php printf(
+                        esc_html__('Показано %d из %d комментариев', 'my-comments'),
+                        count($comments),
+                        $pagination_data['total']
+                    ); ?>
+                </div>
+                <?php include plugin_dir_path(__FILE__) . 'pagination.php'; ?>
+            <?php endif; ?>
         </div>
-    <?php endif; ?>
 
-    <div class="table-responsive mt-4">
-        <table id="<?php echo htmlspecialchars($table_id); ?>" class="table table-striped table-hover table-bordered">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col"><?php esc_html_e('ID', 'my-comments'); ?></th>
-                    <th scope="col"><?php esc_html_e('Имя', 'my-comments'); ?></th>
-                    <th scope="col"><?php esc_html_e('Комментарий', 'my-comments'); ?></th>
-                    <th scope="col"><?php esc_html_e('Дата', 'my-comments'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($comments as $comment): ?>
+        <div class="table-responsive mt-2">
+            <table id="<?php echo htmlspecialchars($table_id); ?>" class="table table-striped table-hover table-bordered">
+                <thead class="table-light">
                     <tr>
-                        <td class="fw-bold"><?php echo htmlspecialchars($comment->id); ?></td>
-                        <td><?php echo htmlspecialchars($comment->name); ?></td>
-                        <td>
-                            <div class="text-wrap w-100">
-                                <?php echo htmlspecialchars($comment->comment); ?>
-                            </div>
-                        </td>
-                        <td class="text-muted small"><?php echo htmlspecialchars($comment->created_at); ?></td>
+                        <th scope="col" style="width: 40px;">
+                            <!-- Пустой заголовок для колонки с чекбоксами -->
+                        </th>
+                        <th scope="col">ID</th>
+                        <th scope="col">Имя</th>
+                        <th scope="col">Комментарий</th>
+                        <th scope="col">Дата</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php endif; ?>
-
-    <!-- Пагинация снизу -->
-    <?php if (!empty($pagination_data) && $pagination_data['total'] > $pagination_data['per_page']): ?>
-        <div class="d-flex justify-content-center mt-4">
-            <?php include plugin_dir_path(__FILE__) . 'pagination.php'; ?>
+                </thead>
+                <tbody>
+                    <?php foreach ($comments as $comment): ?>
+                        <tr>
+                            <td>
+                                <input type="checkbox" 
+                                       name="comment_ids[]" 
+                                       value="<?php echo htmlspecialchars($comment->id); ?>" 
+                                       class="form-check-input comment-checkbox"
+                                       onchange="updateDeleteButton(this)">
+                            </td>
+                            <td class="fw-bold"><?php echo htmlspecialchars($comment->id); ?></td>
+                            <td><?php echo htmlspecialchars($comment->name); ?></td>
+                            <td>
+                                <div class="text-wrap w-100">
+                                    <?php echo htmlspecialchars($comment->comment); ?>
+                                </div>
+                            </td>
+                            <td class="text-muted small"><?php echo htmlspecialchars($comment->created_at); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
-    <?php endif; ?>
+
+        <!-- Кнопка удаления -->
+        <div>
+            <button type="submit" name="delete_selected_comments" id="delete-selected-btn" class="btn btn-danger btn-sm" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-1" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+                Удалить выбранные
+            </button>
+        </div>
+
+        <!-- Пагинация снизу -->
+        <?php if (!empty($pagination_data) && $pagination_data['total'] > $pagination_data['per_page']): ?>
+            <div class="d-flex justify-content-center mt-4">
+                <?php include plugin_dir_path(__FILE__) . 'pagination.php'; ?>
+            </div>
+        <?php endif; ?>
+    </form>
+
+    <!-- JavaScript для активации кнопки удаления -->
+    <script>
+    function updateDeleteButton(checkbox) {
+        const form = document.getElementById('delete-comments-form');
+        const deleteBtn = document.getElementById('delete-selected-btn');
+        const checked = form.querySelectorAll('.comment-checkbox:checked');
+        deleteBtn.disabled = checked.length === 0;
+    }
+    
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('delete-comments-form');
+        const deleteBtn = document.getElementById('delete-selected-btn');
+        if (form && deleteBtn) {
+            const checked = form.querySelectorAll('.comment-checkbox:checked');
+            deleteBtn.disabled = checked.length === 0;
+        }
+    });
+    </script>
+<?php endif; ?>

@@ -10,9 +10,10 @@
 const TABLE_NAME = 'proposals_and_comments';
 
 require_once plugin_dir_path(__FILE__) . 'includes/table_name.php';
-require_once plugin_dir_path(__FILE__) . 'Database/PG_DB_Handler.php';
+//require_once plugin_dir_path(__FILE__) . 'Database/PG_DB_Handler.php';
 require_once plugin_dir_path(__FILE__) . 'includes/pdo_connect.php';
 require_once plugin_dir_path(__FILE__) . 'includes/selected_db.php';
+require_once plugin_dir_path(__FILE__) . 'includes/comment_deletion.php';
 
 // Создаём таблицу в БД Mysql при активации плагина
 if ( !function_exists('create_table_in_mysql')) {
@@ -26,18 +27,14 @@ if (!function_exists('create_table_in_postgresql')) {
 }
 register_activation_hook( __FILE__, 'create_table_in_postgresql' );
 
-// Начинаем сессию
-//add_action('init', function() {
-    //if (!session_id() && !headers_sent()) {
-    //    session_start();
-    //}
-//});
-
 // Обработка комментария
-add_action('init', 'save_сomment');
+add_action('init', 'process_and_save_comment');
 
 // Обработка переключателя БД
-add_action('init', 'handle_db_switcher_submission');
+add_action('init', 'handle_db_switch_request');
+
+add_action('init', 'process_comment_deletion_request');
+add_action('init', 'handle_comment_deletion_confirmation');
 
 // Подключаем bootstrap-local
 add_action('wp_enqueue_scripts', function() {
@@ -53,7 +50,7 @@ add_action('wp_enqueue_scripts', function() {
 add_shortcode('show_comments', 'comments_shortcode');
 
 // Функция для обработки POST запроса от формы ввода комментария
-function save_сomment() {
+function process_and_save_comment() {
     // Проверяем, что это POST запрос с нашей формы
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['submit_comment'])) {
         return false;
@@ -71,9 +68,8 @@ function save_сomment() {
     //  Проверяем обязательные поля
     if (empty($name) || empty($comment)) {
         set_transient(
-            'key_123',
+            'comment_status',
             [
-                'success' => false,
                 'type' => 'warning',
                 'message' => 'Заполните все поля!'
             ],
@@ -94,7 +90,6 @@ function save_сomment() {
     try {
         $stmt->execute();
         $comment_status = [
-            'success' => true,
             'type' => 'success',
             'message' => 'Комментарий добавлен!'
         ];
@@ -103,7 +98,6 @@ function save_сomment() {
     } catch(PDOException $e) {
         error_log(message: "Error writing a comment to the database: " . $e);
         $comment_status = [
-            'success' => false,
             'type' => 'error',
             'message' => 'Ошибка при записи комментария в БД!'
         ];
@@ -112,7 +106,7 @@ function save_сomment() {
     }
 
     // Временно сохраняем сообщение об успехе/ошибке
-    set_transient('key_123', $comment_status, 180);  // время жизни 180 секунд
+    set_transient('comment_status', $comment_status, 180);  // время жизни 180 секунд
 
     // Редирект ДО начала вывода контента
     wp_safe_redirect($_SERVER['REQUEST_URI']);
@@ -120,7 +114,7 @@ function save_сomment() {
 }
 
 // Функция для обработки POST запроса от формы переключения БД
-function handle_db_switcher_submission() {
+function handle_db_switch_request() {
     if (isset($_POST['save_db_choice']) && wp_verify_nonce($_POST['save_db_choice_nonce'], 'save_db_choice_action')) {
         $selected_db = sanitize_text_field($_POST['db_choice']);
 
@@ -185,36 +179,43 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     ];
 
     include plugin_dir_path(__FILE__) . 'templates/comments-table.php';
+
+    return true;
 }
 
 function comments_shortcode() {
     ob_start();
 
+    // Получаем ID удляемых комментариев из transient
+    $comment_ids = get_transient('comment_ids');
+
+    // Если есть ID выводим форму подтверждения удаления
+    if ($comment_ids) {
+        render_comment_deletion_confirmation_form($comment_ids);
+
+        delete_transient('comment_ids');  // Удаляем transient после использования
+
+        return ob_get_clean();   // Больше ни чего не выводим
+    }
+
     // Получаем статус комментария из transient 
-    $comment_status = get_transient('key_123');
+    $comment_status = get_transient('comment_status');
 
     // Если есть статус - показываем уведомление
     if ($comment_status) {
-        include plugin_dir_path(__FILE__) . 'templates/notification.php';
-        $commentSaveSuccess = $comment_status['success'];
-
-        // Удаляем transient после использования
-        delete_transient('key_123');
+        include plugin_dir_path(__FILE__) . 'templates/notification.php';        
+        delete_transient('comment_status');    // Удаляем transient после использования
     }
 
     // Выводим форму ввода комментария
     include plugin_dir_path(__FILE__) . 'templates/comment-form.php';
 
     // Выводим форму переключателя БД
-    $current_db = get_name_active_db();    
+    $current_db = get_name_active_db();    // Передаём в форму имя текущей БД.
     include plugin_dir_path(__FILE__) . 'templates/db-switcher.php';
 
-    // Выводим таблицу комментариев ТОЛЬКО если:
-    // - не было отправки формы ввода комментария ИЛИ
-    // - отправка прошла успешно
-    if (!isset($commentSaveSuccess) || $commentSaveSuccess) {
-        display_comments_table();
-    }
+    // Выводим таблицу с комментариями, которая также служит формой для их удаления.
+    display_comments_table();
 
     return ob_get_clean();
 }
