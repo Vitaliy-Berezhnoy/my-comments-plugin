@@ -11,9 +11,9 @@ function route_post_actions() {
     //  Выбираем функцию обработчик POST запроса.
     $result = match (true) {
         isset($_POST['save_db_choice']) => handle_db_switch_request(),  //  запрос от формы переключения БД
-        isset($_POST['submit_comment']) => process_and_save_comment(),  //  запрос от формы ввода комментария
+        isset($_POST['save_comment']) => process_and_save_comment(),  //  запрос от формы ввода комментария
         isset($_POST['delete_selected_comments']) => process_comment_deletion_request(), // от формы удаления комментариев
-        isset($_POST['confirm_deletion_submit']) => handle_comment_deletion_confirmation(),  // от формы подтверждения удаления
+        isset($_POST['confirm_deletion']) => handle_comment_deletion_confirmation(),  // от формы подтверждения удаления
         default => false,        
     };
     
@@ -94,7 +94,7 @@ function process_and_save_comment() {
             'message' => 'Комментарий добавлен!'
         ];
     } catch(PDOException $e) {
-        error_log(message: "Error writing a comment to the database: " . $e);
+        error_log(message: "Error writing a comment to the database: " . $e->getMessage());
         $comment_status = [
             'type' => 'error',
             'message' => 'Ошибка при записи комментария в БД!'
@@ -189,7 +189,7 @@ function handle_comment_deletion_confirmation() {
             'message' => "Удалено комментариев: {$deleted_count}"
         ];
     } catch(PDOException $e) {
-        error_log("Error when deleting a comment from the database: {$e}");
+        error_log("Error when deleting a comment from the database: " . $e->getMessage());
         $comment_status = [
             'type' => 'error',
             'message' => "Ошибка при удалении комментариев"

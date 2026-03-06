@@ -35,7 +35,7 @@
         <div class="col-12">
             <button
                 type="submit"
-                name="submit_comment"
+                name="save_comment"
                 class="btn btn-primary px-4 py-2"
             >
                 <?php esc_html_e('Отправить комментарий', 'my-comments'); ?>

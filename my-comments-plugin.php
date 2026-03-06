@@ -14,18 +14,14 @@ require_once plugin_dir_path(__FILE__) . 'includes/pdo_connect.php';
 require_once plugin_dir_path(__FILE__) . 'includes/selected_db.php';
 require_once plugin_dir_path(__FILE__) . 'includes/route-post-actions.php';
 require_once plugin_dir_path(__FILE__) . 'includes/forms-and-tables.php';
+require_once plugin_dir_path(__FILE__) . 'includes/creating-tables-in-db.php';
 
-// Создаём таблицу в БД Mysql при активации плагина
-if ( !function_exists('create_table_in_mysql')) {
-    require_once plugin_dir_path( __FILE__ ) . 'includes/db-mysql.php';
-}
-register_activation_hook( __FILE__, 'create_table_in_mysql' );
-
-// Создаём таблицу в БД PostgreSQL при активации плагина
-if (!function_exists('create_table_in_postgresql')) {
-    require_once plugin_dir_path( __FILE__ ) . 'includes/db-postgresql.php';
-}
-register_activation_hook( __FILE__, 'create_table_in_postgresql' );
+/**
+ * При активации плагина проверяем наличие таблиц
+ * для комментариев в базах MySQL и PostgreSQL.
+ * При отсутствии создаём, при наличии оставляем.
+ */
+register_activation_hook( __FILE__, 'create_tables_on_activation' );
 
 //  Обрабатываем POST запросы
 add_action('init', 'route_post_actions');
@@ -48,10 +44,10 @@ add_shortcode('show_comments', 'comments_shortcode');
 function comments_shortcode() {
     ob_start();
 
-    // Получаем ID удляемых комментариев из transient
+    // Получаем из transient ID комментариев, помеченных на удаление
     $comment_ids = get_transient('comment_ids');
 
-    // Если есть ID выводим форму подтверждения удаления
+    // Если ID есть, выводим форму подтверждения удаления.
     if ($comment_ids) {
         render_comment_deletion_confirmation_form($comment_ids);
 
@@ -60,10 +56,10 @@ function comments_shortcode() {
         return ob_get_clean();   // Больше ни чего не выводим
     }
 
-    // Получаем статус комментария из transient 
+    // Получаем из transient статус комментария. 
     $comment_status = get_transient('comment_status');
 
-    // Если есть статус - показываем уведомление
+    // Если статус есть — показываем уведомление.
     if ($comment_status) {
         include plugin_dir_path(__FILE__) . 'templates/notification.php';        
         delete_transient('comment_status');    // Удаляем transient после использования

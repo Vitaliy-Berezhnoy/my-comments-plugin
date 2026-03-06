@@ -64,7 +64,7 @@ function render_comment_deletion_confirmation_form(array $comment_ids) {
     
     $pdo = get_pdo_active_db();
 
-    //  Получаем комментарии помеченные на удпление в виде объектов
+    //  Получаем комментарии, помеченные на удаление, в виде объектов
     $table_name = get_table_name();
     $placeholders = str_repeat('?, ', count($comment_ids) - 1) . '?';
     $sql = "SELECT * FROM $table_name WHERE id IN ($placeholders)";
