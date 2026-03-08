@@ -26,7 +26,7 @@ function pdo_connect_mysql() {
     } catch (PDOException $e) {
         // Логируем ошибку, но не показываем пользователю чувствительные данные
         error_log('PDO Connection to MySQL in MyPlugin Error: ' . $e->getMessage());
-        return false;  // Надо или нет выбросить исключение дальше ???
+        return false;  // Как жить дальше если соеденение не установленно ???
     }
 }
 
@@ -55,5 +55,5 @@ function pdo_connect_postgresql() {
         // Логируем ошибку, но не показываем пользователю чувствительные данные
         error_log('PDO Connection to PostgreSQL in MyPlugin Error: ' . $e->getMessage());
         return false;
-}
+    }
 }

@@ -47,11 +47,11 @@ function comments_shortcode() {
     // Получаем из transient ID комментариев, помеченных на удаление
     $comment_ids = get_transient('comment_ids');
 
-    // Если ID есть, выводим форму подтверждения удаления.
+    // Если ID есть, выводим форму для подтверждения удаления.
     if ($comment_ids) {
         render_comment_deletion_confirmation_form($comment_ids);
 
-        delete_transient('comment_ids');  // Удаляем transient после использования
+        delete_transient('comment_ids');  // Удаляем из transient после использования
 
         return ob_get_clean();   // Больше ни чего не выводим
     }
@@ -62,7 +62,7 @@ function comments_shortcode() {
     // Если статус есть — показываем уведомление.
     if ($comment_status) {
         include plugin_dir_path(__FILE__) . 'templates/notification.php';        
-        delete_transient('comment_status');    // Удаляем transient после использования
+        delete_transient('comment_status');    // Удаляем из transient после использования
     }
 
     // Выводим форму ввода комментария
