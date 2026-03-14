@@ -1,7 +1,7 @@
 <?php
 /**
  * При активации плагина функция создаст таблицы 
- * для комментариев в базах данных MySQL и PostgreSQL.
+ * для комментариев в базах данных MySQL и PostgresSQL.
  */
 
 function create_tables_on_activation() {

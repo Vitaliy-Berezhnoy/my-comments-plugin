@@ -8,9 +8,21 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     $table_name = get_table_name();
 
     $sql = "SELECT COUNT(*) AS total FROM $table_name";
-    $stmt = $pdo->query($sql);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    $total = $row ? (int)$row['total'] : 0;
+
+    try {
+        $stmt = $pdo->query($sql);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $total = $row ? (int)$row['total'] : 0;
+        $row = null;
+        $stmt = null;
+    } catch(PDOException $e) {
+        error_log("Error reading from the table {$table_name}" . $e->getMessage());
+        set_transient('error_message', "Ошибка чтения из таблицы с комментариями в выбранной БД.", 180);
+        $row = null;
+        $stmt = null;
+        $pdo = null;
+        return false;
+    }    
 
     //  Вычисляем количество страниц
     $pages_count = ceil($total / $per_page);
@@ -34,16 +46,22 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     $offset = ($current_page - 1) * $per_page;
 
     // Получаем комментарии с лимитом
-    $sql2 = "SELECT * FROM $table_name
+    $sql = "SELECT * FROM $table_name
              ORDER BY created_at DESC
              LIMIT :limit OFFSET :offset";
-    $stmy2 = $pdo->prepare($sql2);
-    $stmy2->bindParam(':limit', $per_page, PDO::PARAM_INT);
-    $stmy2->bindParam(':offset', $offset, PDO::PARAM_INT);
-    $stmy2->execute();
-
-    //  Передаем комментарии в виде объектов в шаблон
-    $comments = $stmy2->fetchAll(PDO::FETCH_OBJ);
+    
+    try {
+        $stmy = $pdo->prepare($sql);
+        $stmy->bindParam(':limit', $per_page, PDO::PARAM_INT);
+        $stmy->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmy->execute();
+        //  Готовим комментарии для передачи в шаблон в виде объектов
+        $comments = $stmy->fetchAll(PDO::FETCH_OBJ);
+    } catch(PDOException $e) {
+        error_log("Error reading from the table {$table_name}" . $e->getMessage());
+        set_transient('error_message', "Ошибка чтения из таблицы с комментариями в выбранной БД.", 180);
+        return false;      
+    }
 
     // Передаем данные для пагинации в шаблон
     $pagination_data = [

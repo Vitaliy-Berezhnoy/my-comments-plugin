@@ -12,8 +12,8 @@ function route_post_actions() {
     $result = match (true) {
         isset($_POST['save_db_choice']) => handle_db_switch_request(),  //  запрос от формы переключения БД
         isset($_POST['save_comment']) => process_and_save_comment(),  //  запрос от формы ввода комментария
-        isset($_POST['delete_selected_comments']) => process_comment_deletion_request(), // от формы удаления комментариев
-        isset($_POST['confirm_deletion']) => handle_comment_deletion_confirmation(),  // от формы подтверждения удаления
+        isset($_POST['delete_selected_comments']) => process_comment_deletion_request(), // формы удаления комментариев
+        isset($_POST['confirm_deletion']) => handle_comment_deletion_confirmation(),  //от формы подтверждения удаления
         default => false,        
     };
     
@@ -31,7 +31,9 @@ function route_post_actions() {
 function handle_db_switch_request() {
 
     // Проверяем nonce
-    if (!isset($_POST['save_db_choice_nonce']) || !wp_verify_nonce($_POST['save_db_choice_nonce'], 'save_db_choice_action')) {
+    if (!isset($_POST['save_db_choice_nonce']) ||
+        !wp_verify_nonce($_POST['save_db_choice_nonce'], 'save_db_choice_action')) {
+
         return false;
     }
 
@@ -56,7 +58,9 @@ function handle_db_switch_request() {
 function process_and_save_comment() {
 
     // Проверяем nonce
-    if (!isset($_POST['add_comment_nonce']) || !wp_verify_nonce($_POST['add_comment_nonce'], 'add_comment_action')) {
+    if (!isset($_POST['add_comment_nonce']) ||
+        !wp_verify_nonce($_POST['add_comment_nonce'], 'add_comment_action')) {
+
         return false;
     }
 
@@ -83,11 +87,12 @@ function process_and_save_comment() {
     $pdo = get_pdo_active_db();
 
     $sql = "INSERT INTO $table_name (name, comment) VALUES (:name, :comment);";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-    $stmt->bindParam(':comment', $comment, PDO::PARAM_STR);
+
 
     try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+        $stmt->bindParam(':comment', $comment, PDO::PARAM_STR);
         $stmt->execute();
         $comment_status = [
             'type' => 'success',
@@ -115,7 +120,8 @@ function process_and_save_comment() {
 function process_comment_deletion_request() {
 
     //  Проверяем nonce
-    if (!isset($_POST['delete_comments_nonce']) || !wp_verify_nonce($_POST['delete_comments_nonce'], 'delete_comments_action')) {
+    if (!isset($_POST['delete_comments_nonce']) ||
+        !wp_verify_nonce($_POST['delete_comments_nonce'], 'delete_comments_action')) {
         return false;
     }
 

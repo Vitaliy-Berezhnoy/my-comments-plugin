@@ -36,7 +36,8 @@ add_action('wp_enqueue_scripts', function() {
         [],
         '5.3.8'  // версия Bootstrap
     );
-});
+}, 11);  // Подключаем после стилей темы hello-biz.
+// Если ипользовать приоритет 10 (по умолчанию) тема hello-biz переопределит стили кнопок.
 
 add_shortcode('show_comments', 'comments_shortcode');
 
@@ -74,6 +75,15 @@ function comments_shortcode() {
 
     // Выводим таблицу с комментариями, которая также служит формой для их удаления.
     display_comments_table();
+
+    // Получаем из transient сообщение об ошибке. 
+    $error_message = get_transient('error_message');
+
+    // Если ошибка есть — показываем уведомление.
+    if ($error_message) {
+        include plugin_dir_path(__FILE__) . 'templates/notification-error.php';        
+        delete_transient('error_message');    // Удаляем из transient после использования
+    }
 
     return ob_get_clean();
 }
