@@ -45,28 +45,27 @@ add_shortcode('show_comments', 'comments_shortcode');
 function comments_shortcode() {
     ob_start();
 
-    // Получаем из transient ID комментариев, помеченных на удаление
-    $comment_ids = get_transient('comment_ids');
+    /**
+     * Если в transient есть ID комментариев, помеченных на удаление,
+     * тогда выводим форму для подтверждения удаления.
+     * и больше ни чего не выводим
+     */
 
-    // Если ID есть, выводим форму для подтверждения удаления.
+    $comment_ids = get_transient('comment_ids');
     if ($comment_ids) {
         render_comment_deletion_confirmation_form($comment_ids);
-
         delete_transient('comment_ids');  // Удаляем из transient после использования
-
-        return ob_get_clean();   // Больше ни чего не выводим
+        return ob_get_clean();
     }
 
-    // Получаем из transient статус комментария. 
+    // Если в transient есть статус комментария — показываем уведомление.
     $comment_status = get_transient('comment_status');
-
-    // Если статус есть — показываем уведомление.
     if ($comment_status) {
         include plugin_dir_path(__FILE__) . 'templates/notification.php';        
         delete_transient('comment_status');    // Удаляем из transient после использования
     }
 
-    // Выводим форму ввода комментария
+    // Выводим форму для ввода комментария
     include plugin_dir_path(__FILE__) . 'templates/comment-form.php';
 
     // Выводим форму переключателя БД
@@ -76,10 +75,8 @@ function comments_shortcode() {
     // Выводим таблицу с комментариями, которая также служит формой для их удаления.
     display_comments_table();
 
-    // Получаем из transient сообщение об ошибке. 
+    // Если в transient есть сообщение об ошибке — показываем уведомление. 
     $error_message = get_transient('error_message');
-
-    // Если ошибка есть — показываем уведомление.
     if ($error_message) {
         include plugin_dir_path(__FILE__) . 'templates/notification-error.php';        
         delete_transient('error_message');    // Удаляем из transient после использования
