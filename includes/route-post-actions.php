@@ -70,7 +70,7 @@ function process_and_save_comment() {
 
     //  Проверяем обязательные поля
     if (empty($name) || empty($comment)) {
-        //  Сохраняем сообщение в transient
+        //  Если есть не заполненное поле — сохраняем сообщение в transient.
         set_transient(
             'comment_status',
             [
@@ -186,8 +186,9 @@ function handle_comment_deletion_confirmation() {
     $table_name = get_table_name();
     $placeholders = str_repeat('?, ', count($selected_ids) - 1) . '?';
     $sql = "DELETE FROM $table_name WHERE id IN ($placeholders)";
-    $stmt = $pdo->prepare($sql);
+    
     try {
+        $stmt = $pdo->prepare($sql);
         $stmt->execute($selected_ids);
         $deleted_count = $stmt->rowCount();
         $comment_status = [

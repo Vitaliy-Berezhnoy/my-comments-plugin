@@ -75,7 +75,7 @@ function comments_shortcode() {
     // Выводим таблицу с комментариями, которая также служит формой для их удаления.
     display_comments_table();
 
-    // Если в transient есть сообщение об ошибке — показываем уведомление. 
+    // Если в transient появилось сообщение об ошибке — показываем уведомление. 
     $error_message = get_transient('error_message');
     if ($error_message) {
         include plugin_dir_path(__FILE__) . 'templates/notification-error.php';        

@@ -37,7 +37,8 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     }
     $current_page = max(1, intval($current_page));
 
-    //
+    //  При переключении базы данных
+    //  номер текущей страницы может оказаться больше общего числа страниц в подключенной базе.
     if ($current_page > $pages_count) {
         $current_page = 1;
     }
@@ -72,6 +73,10 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
 
     include dirname(plugin_dir_path(__FILE__)) . '/templates/comments-table.php';
 
+    //  Закрываем соеденение с БД
+    $stmt = null;
+    $pdo = null;
+
     return true;
 }
 
@@ -94,6 +99,10 @@ function render_comment_deletion_confirmation_form(array $comment_ids) {
 
     //  Выводим форму подтверждения удаления
     include dirname(plugin_dir_path(__FILE__)) . '/templates/confirm-delete.php';
+
+    //  Закрываем соеденение с БД
+    $stmt = null;
+    $pdo = null;
 
     return true;
 }
