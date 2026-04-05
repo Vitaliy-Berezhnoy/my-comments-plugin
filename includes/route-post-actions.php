@@ -18,8 +18,18 @@ function route_post_actions() {
     };
     
     if ($result) {
-        // Редирект ДО начала вывода контента
-        wp_safe_redirect($_SERVER['REQUEST_URI']);
+        // Формируем URL для редиректа
+        $redirect_url = $_SERVER['REQUEST_URI'];
+
+        // Удаляем существующий якорь, если он есть
+        $redirect_url = strtok($redirect_url, '#');
+
+        // Добавляем якорь из скрытого поля, если он передан
+        $anchor = sanitize_html_class($_POST['anchor'] ?? '');
+        if ($anchor) {
+            $redirect_url .= '#' . $anchor;
+        }
+        wp_safe_redirect($redirect_url);
         exit;
     }
     //  Редирект не нужен

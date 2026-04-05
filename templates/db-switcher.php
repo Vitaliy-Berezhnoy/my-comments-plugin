@@ -1,4 +1,4 @@
-<div class="container mt-4">
+<div id="db-switcher" class="container mt-4">
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h5>Выбор базы данных для комментариев</h5>
@@ -6,6 +6,10 @@
         <div class="card-body">
             <form method="post" action="" class="needs-validation" novalidate>
                 <?php wp_nonce_field('save_db_choice_action', 'save_db_choice_nonce'); ?>
+
+                <!-- Скрытое поле для передачи якоря -->
+                <input type="hidden" name="anchor" value="db-switcher">
+                
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="db_choice" id="mysql" value="mysql" <?php echo $current_db === 'mysql' ? 'checked' : ''; ?>>
                     <label class="form-check-label" for="mysql">

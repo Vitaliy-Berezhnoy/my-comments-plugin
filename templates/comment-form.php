@@ -1,5 +1,8 @@
-<form method="post" action="" class="needs-validation">
+<form id="form_comment" method="post" action="" class="needs-validation">
     <?php wp_nonce_field('add_comment_action', 'add_comment_nonce'); ?>
+
+    <!-- Скрытое поле для передачи якоря -->
+    <input type="hidden" name="anchor" value="form_comment">
 
     <div class="row g-3">
         <!-- Поле имени -->
