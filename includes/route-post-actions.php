@@ -27,7 +27,7 @@ function route_post_actions() {
         // Добавляем якорь из скрытого поля, если он передан
         $anchor = sanitize_html_class($_POST['anchor'] ?? '');
         if ($anchor) {
-            $redirect_url .= '#' . $anchor;
+            $redirect_url .= "#{$anchor}";
         }
         wp_safe_redirect($redirect_url);
         exit;
