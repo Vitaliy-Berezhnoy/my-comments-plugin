@@ -15,7 +15,8 @@
     <!-- Основная форма выбора комментариев -->
     <form method="post" action="" id="delete-comments-form">
         <?php wp_nonce_field('delete_comments_action', 'delete_comments_nonce'); ?>
-    <!--    <input type="hidden" name="show_confirm" value="1">  -->
+
+        <input type="hidden" name="delete_selected_comments" value="">
         
         <!-- Пагинация сверху -->
         <div class="d-flex justify-content-between align-items-center mb-3">            
@@ -93,69 +94,135 @@
 
     <!-- JavaScript для активации кнопки удаления -->
     <script>
-    // Ключ для хранения данных в sessionStorage
-    const STORAGE_KEY = 'my-comments-selected-ids';
+// Ключ для хранения данных в sessionStorage
+const STORAGE_KEY = 'my-comments-selected-ids';
 
-    // Функция сохранения ID в sessionStorage
-    function saveSelectedIds() {
-        const checkedIds = Array.from(
-            document.querySelectorAll('.comment-checkbox:checked')
-        ).map(cb => cb.value);
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(checkedIds));
-        updateSelectionCount();
+// Функция сохранения ID в sessionStorage
+function saveSelectedIds() {
+    // Получаем текущие сохранённые ID
+    const savedIds = sessionStorage.getItem(STORAGE_KEY);
+    const existingIds = savedIds ? JSON.parse(savedIds) : [];
+
+    // Получаем ID отмеченных на текущей странице
+    const currentCheckedIds = Array.from(
+        document.querySelectorAll('.comment-checkbox:checked')
+    ).map(cb => cb.value);
+
+    // Объединяем наборы ID (Set автоматически убирает дубликаты)
+    const allCheckedIdsSet = new Set([...existingIds, ...currentCheckedIds]);
+
+    // Получаем множество ID НЕотмеченных на текущей странице
+    const currentUncheckedIdsSet = new Set(
+        [...document.querySelectorAll('.comment-checkbox:not(:checked)')]
+           .map(cb => cb.value)
+    );
+
+    // Удаляем ID комментариев, отметки на которых были сняты
+    const updatedIdsSet = allCheckedIdsSet.difference(currentUncheckedIdsSet);
+
+    // Сохраняем в sessionStorage обновлённый список
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(updatedIdsSet)));
+    updateSelectionCount();
+    updateDeleteButtonState();
+}
+
+// Восстановление отметок при загрузке страницы
+function restoreSelectedIds() {
+    const savedIds = sessionStorage.getItem(STORAGE_KEY);
+    if (savedIds) {
+        const ids = JSON.parse(savedIds);
+        ids.forEach(id => {
+            const checkbox = document.querySelector(`.comment-checkbox[value="${id}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
     }
+    updateSelectionCount();
+    updateDeleteButtonState();
 
-    // Восстановление отметок при загрузке страницы
-    function restoreSelectedIds() {
+}
+
+// Обновление счётчика выбранных комментариев
+function updateSelectionCount() {
+    const savedIds = sessionStorage.getItem(STORAGE_KEY);
+    const count = savedIds ? JSON.parse(savedIds).length : 0;
+    const countElement = document.getElementById('selected-count');
+    if (countElement) {
+        countElement.innerHTML = `Выбрано для удаления: <strong>${count}</strong> комментариев`;
+    }
+}
+
+// Очистка данных после успешной отправки формы
+function clearSelectedIds() {
+    sessionStorage.removeItem(STORAGE_KEY);
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    restoreSelectedIds();
+
+    // Отслеживаем изменения чекбоксов
+    document.querySelectorAll('.comment-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', saveSelectedIds);
+    });
+});
+
+// Обновление состояния кнопки удаления
+function updateDeleteButtonState() {
+    const deleteBtn = document.getElementById('delete-selected-btn');
+    const savedIds = sessionStorage.getItem(STORAGE_KEY);
+    const hasSelected = savedIds && JSON.parse(savedIds).length > 0;
+    deleteBtn.disabled = !hasSelected;
+}
+
+// Отправка формы удаления
+document.getElementById('delete-comments-form').addEventListener('submit', function(e) {
+
+    // Деактивируем кнопку "Удалить выбранные"
+    const deleteBtn = document.getElementById('delete-selected-btn');
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'Удаление...';
+
+    try {
+        // Получаем ID для удаления из sessionStorage
         const savedIds = sessionStorage.getItem(STORAGE_KEY);
-        if (savedIds) {
-            const ids = JSON.parse(savedIds);
-            ids.forEach(id => {
-                const checkbox = document.querySelector(`.comment-checkbox[value="${id}"]`);
-                if (checkbox) checkbox.checked = true;
-            });
+        const idsToDelete = savedIds ? JSON.parse(savedIds) : [];
+
+        if (idsToDelete.length === 0) {
+            alert('Выберите комментарии для удаления');
+            e.preventDefault(); // Отменяем отправку, если нет выбранных комментариев
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = 'Удалить выбранные';
+            return;
         }
-        updateSelectionCount();
-    }
-    // Обновление счётчика выбранных комментариев
-    function updateSelectionCount() {
-        const savedIds = sessionStorage.getItem(STORAGE_KEY);
-        const count = savedIds ? JSON.parse(savedIds).length : 0;
-        const countElement = document.getElementById('selected-count');
-        if (countElement) {
-            countElement.innerHTML = `Выбрано для удаления: <strong>${count}</strong> комментариев`;
-        }
-    }
 
-    // Очистка данных после успешной отправки формы
-    function clearSelectedIds() {
-        sessionStorage.removeItem(STORAGE_KEY);
-    }
+        const form = document.getElementById('delete-comments-form');
 
-    // Инициализация при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
-        restoreSelectedIds();
+        // Удаляем старые поля comment_ids[], если они есть
+        form.querySelectorAll('input[name="comment_ids\[\]"]').forEach(input => input.remove());
 
-        // Отслеживаем изменения чекбоксов
-        document.querySelectorAll('.comment-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', saveSelectedIds);
+        // Добавляем новые поля comment_ids[] для каждого ID
+        idsToDelete.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'comment_ids[]';
+            input.value = id;
+            form.appendChild(input);
         });
 
-        // Обновляем счётчик при загрузке
-        updateSelectionCount();
-    });
-
-    function updateDeleteButton(checkbox) {
-        saveSelectedIds(); // Сохраняем при каждом изменении
-        const form = document.getElementById('delete-comments-form');
-        const deleteBtn = document.getElementById('delete-selected-btn');
-        const checked = form.querySelectorAll('.comment-checkbox:checked');
-        deleteBtn.disabled = checked.length === 0;
-    }
-    
-    // При отправке формы очищаем sessionStorage после успешного удаления
-    document.getElementById('delete-comments-form').addEventListener('submit', function() {
         clearSelectedIds();
-    });
+
+        // Активируем поле delete_selected_comments
+        let deleteField = form.querySelector('input[name="delete_selected_comments"]');
+        deleteField.value = '1';
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при подготовке данных для удаления. Попробуйте ещё раз.');
+        e.preventDefault(); // Отменяем отправку при ошибке
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Удалить выбранные';
+    }
+});
+
     </script>
 <?php endif; ?>
