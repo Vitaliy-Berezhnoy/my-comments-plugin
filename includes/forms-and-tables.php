@@ -68,7 +68,8 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
     $pagination_data = [
         'total' => $total,
         'per_page' => $per_page,
-        'current_page' => $current_page
+        'current_page' => $current_page,
+        'table_id' => $table_id
     ];
 
     include dirname(plugin_dir_path(__FILE__)) . '/templates/comments-table.php';

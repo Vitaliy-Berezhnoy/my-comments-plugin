@@ -30,7 +30,7 @@ $total_pages = ceil($pagination_data['total'] / $pagination_data['per_page']);
         <!-- Кнопка "Вперед" -->
         <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
             <a class="page-link"
-               href="?paged=<?php echo $current_page + 1; ?>#<?php echo $table_id; ?>">
+               href="?paged=<?php echo $current_page + 1; ?>#<?php echo $pagination_data['table_id']; ?>">
                 &raquo;
             </a>
         </li>
