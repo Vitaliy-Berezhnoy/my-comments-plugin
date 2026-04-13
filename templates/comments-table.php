@@ -73,16 +73,25 @@
             <span id="selected-count">Выбрано для удаления: <strong>0</strong> комментариев</span>
         </div>
 
-        <!-- Кнопка удаления -->
-        <div>
-            <button type="submit" name="delete_selected_comments" id="delete-selected-btn" class="mt-3 btn btn-danger btn-sm" disabled>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-1" viewBox="0 0 16 16">
-                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                </svg>
-                Удалить выбранные
-            </button>
-        </div>
+<!-- Кнопка удаления -->
+<div class="d-flex gap-2 mt-3">
+    <button type="submit" name="delete_selected_comments" id="delete-selected-btn" class="btn btn-danger" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-1" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+        </svg>
+        Удалить выбранные
+    </button>
+    
+    <!-- Новая кнопка очистки -->
+    <button type="button" id="clear-selected-btn" class="btn btn-outline-dark" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle me-1" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+        </svg>
+        Очистить все выделения
+    </button>
+</div>
 
         <!-- Пагинация снизу -->
         <?php if (!empty($pagination_data) && $pagination_data['total'] > $pagination_data['per_page']): ?>
@@ -123,7 +132,7 @@ function saveSelectedIds() {
     // Сохраняем в sessionStorage обновлённый список
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(updatedIdsSet)));
     updateSelectionCount();
-    updateDeleteButtonState();
+    updateButtonState();
 }
 
 // Восстановление отметок при загрузке страницы
@@ -137,8 +146,7 @@ function restoreSelectedIds() {
         });
     }
     updateSelectionCount();
-    updateDeleteButtonState();
-
+    updateButtonState();
 }
 
 // Обновление счётчика выбранных комментариев
@@ -156,6 +164,39 @@ function clearSelectedIds() {
     sessionStorage.removeItem(STORAGE_KEY);
 }
 
+// Функция очистки всех выделений
+function clearAllSelections() {
+    if (confirm('Вы уверены, что хотите снять выделение со всех комментариев?')) {
+        // Снимаем отметки со всех чекбоксов на текущей странице
+        document.querySelectorAll('.comment-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // Очищаем sessionStorage
+        sessionStorage.removeItem(STORAGE_KEY);
+        
+        // Обновляем счётчик и состояние кнопки удаления
+        updateSelectionCount();
+        updateButtonState();
+    } else {
+        // Если пользователь нажал «Отмена» — сбрасываем фокус с кнопки
+        const clearBtn = document.getElementById('clear-selected-btn');
+        if (clearBtn) {
+            clearBtn.blur(); // убираем фокус
+        }
+    }
+}
+
+// Функция обновления состояния кнопок удаления и очистки
+function updateButtonState() {
+    const deleteBtn = document.getElementById('delete-selected-btn');
+    const clearBtn = document.getElementById('clear-selected-btn');
+    const savedIds = sessionStorage.getItem(STORAGE_KEY);
+    const hasSelected = savedIds && JSON.parse(savedIds).length > 0;
+    deleteBtn.disabled = !hasSelected;
+    clearBtn.disabled = !hasSelected;
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     restoreSelectedIds();
@@ -164,15 +205,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.comment-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', saveSelectedIds);
     });
+
+    // Обработчик для кнопки очистки
+    const clearBtn = document.getElementById('clear-selected-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearAllSelections);
+    }
 });
 
-// Обновление состояния кнопки удаления
-function updateDeleteButtonState() {
-    const deleteBtn = document.getElementById('delete-selected-btn');
-    const savedIds = sessionStorage.getItem(STORAGE_KEY);
-    const hasSelected = savedIds && JSON.parse(savedIds).length > 0;
-    deleteBtn.disabled = !hasSelected;
-}
 
 // Отправка формы удаления
 document.getElementById('delete-comments-form').addEventListener('submit', function(e) {
