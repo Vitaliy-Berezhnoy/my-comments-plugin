@@ -12,8 +12,7 @@ function route_post_actions() {
     $result = match (true) {
         isset($_POST['save_db_choice']) => handle_db_switch_request(),  //  запрос от формы переключения БД
         isset($_POST['save_comment']) => process_and_save_comment(),  //  запрос от формы ввода комментария
-        isset($_POST['delete_selected_comments']) => process_comment_deletion_request(), // формы удаления комментариев
-        isset($_POST['confirm_deletion']) => handle_comment_deletion_confirmation(),  //от формы подтверждения удаления
+        isset($_POST['delete_selected_comments']) => delete_selected_comments(), // запрос от формы удаления комментариев
         default => false,        
     };
     
@@ -127,7 +126,7 @@ function process_and_save_comment() {
 
 
 //  Функция для обработки POST‑запроса от формы удаления комментариев
-function process_comment_deletion_request() {
+function delete_selected_comments() {
 
     //  Проверяем nonce
     if (!isset($_POST['delete_comments_nonce']) ||
@@ -136,28 +135,7 @@ function process_comment_deletion_request() {
     }
 
     //  Получаем список комментариев помеченных на удаление
-    $comment_ids = $_POST['comment_ids'] ?? [];
-    $comment_ids = array_map('intval', $comment_ids);
-
-    //  Сохраняем в transient на три минуты
-    set_transient('comment_ids', $comment_ids, 180);
-
-    return true;    // true - разрешит Редирект
-}
-
-
-//  Функция для обработки POST‑запроса от формы подтверждения удаления
-function handle_comment_deletion_confirmation() {
-
-    //  Проверяем что это nonce от формы подтверждения удаления
-    if (!isset($_POST['confirmation_of_deletion_nonce']) ||
-        !wp_verify_nonce($_POST['confirmation_of_deletion_nonce'], 'confirmation_of_deletion_action')) {
-
-        return false;
-    }
-
-    // Извлекаем ID
-    $selected_ids = $_POST['selected_ids'] ?? [];
+    $selected_ids = $_POST['comment_ids'] ?? [];
 
     if (empty($selected_ids)) {
         set_transient(

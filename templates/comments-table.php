@@ -75,7 +75,7 @@
 
 <!-- Кнопка удаления -->
 <div class="d-flex gap-2 mt-3">
-    <button type="submit" name="delete_selected_comments" id="delete-selected-btn" class="btn btn-danger" disabled>
+    <button type="button" id="delete-selected-btn" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirm-delete-modal" disabled>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-1" viewBox="0 0 16 16">
             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
             <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -99,6 +99,9 @@
                 <?php include plugin_dir_path(__FILE__) . 'pagination.php'; ?>
             </div>
         <?php endif; ?>
+
+        <!-- Подключение модального окна подтверждения -->
+        <?php include plugin_dir_path(__FILE__) . 'confirm-delete-modal.php'; ?>
     </form>
 
     <!-- JavaScript для активации кнопки удаления -->
@@ -180,10 +183,7 @@ function clearAllSelections() {
         updateButtonState();
     } else {
         // Если пользователь нажал «Отмена» — сбрасываем фокус с кнопки
-        const clearBtn = document.getElementById('clear-selected-btn');
-        if (clearBtn) {
-            clearBtn.blur(); // убираем фокус
-        }
+        document.getElementById('clear-selected-btn').blur();
     }
 }
 
@@ -196,6 +196,45 @@ function updateButtonState() {
     deleteBtn.disabled = !hasSelected;
     clearBtn.disabled = !hasSelected;
 }
+
+// Функция для формирования и отправки POST запроса для удаления комментариев
+function submitDeleteForm() {
+    // Деактивируем кнопку "Удалить выбранные"
+    // const deleteBtn = document.getElementById('delete-selected-btn');
+    // deleteBtn.disabled = true;
+    // deleteBtn.textContent = 'Удаление...';
+
+
+    // Получаем ID для удаления из sessionStorage
+    const savedIds = sessionStorage.getItem(STORAGE_KEY);
+    const idsToDelete = savedIds ? JSON.parse(savedIds) : [];
+
+    const form = document.getElementById('delete-comments-form');
+
+    // Удаляем старые поля comment_ids[], если они есть
+    form.querySelectorAll('input[name="comment_ids\[\]"]').forEach(input => input.remove());
+
+    // Добавляем новые поля comment_ids[] для каждого ID
+    idsToDelete.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'comment_ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+
+    // Активируем поле delete_selected_comments
+    let deleteField = form.querySelector('input[name="delete_selected_comments"]');
+    deleteField.value = '1';
+
+    // Очищаем хранилище
+    clearSelectedIds();
+
+    // Отправляем форму
+    form.submit();
+}
+    
+    
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
@@ -211,58 +250,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (clearBtn) {
         clearBtn.addEventListener('click', clearAllSelections);
     }
-});
 
+    // Обработчик для кнопки удаления - показываем модальное окно
+    const modal = document.getElementById('confirm-delete-modal');    
 
-// Отправка формы удаления
-document.getElementById('delete-comments-form').addEventListener('submit', function(e) {
-
-    // Деактивируем кнопку "Удалить выбранные"
-    const deleteBtn = document.getElementById('delete-selected-btn');
-    deleteBtn.disabled = true;
-    deleteBtn.textContent = 'Удаление...';
-
-    try {
-        // Получаем ID для удаления из sessionStorage
+    modal.addEventListener('show.bs.modal', function () {
+        // Получаем количество ID выбранных комментариев из sessionStorage
         const savedIds = sessionStorage.getItem(STORAGE_KEY);
-        const idsToDelete = savedIds ? JSON.parse(savedIds) : [];
+        const count = savedIds ? JSON.parse(savedIds).length : 0;
+        // Обновляем счётчик в модальном окне
+        document.getElementById('selected-count-modal').textContent = count;
+    })
 
-        if (idsToDelete.length === 0) {
-            alert('Выберите комментарии для удаления');
-            e.preventDefault(); // Отменяем отправку, если нет выбранных комментариев
-            deleteBtn.disabled = false;
-            deleteBtn.textContent = 'Удалить выбранные';
-            return;
-        }
-
-        const form = document.getElementById('delete-comments-form');
-
-        // Удаляем старые поля comment_ids[], если они есть
-        form.querySelectorAll('input[name="comment_ids\[\]"]').forEach(input => input.remove());
-
-        // Добавляем новые поля comment_ids[] для каждого ID
-        idsToDelete.forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'comment_ids[]';
-            input.value = id;
-            form.appendChild(input);
-        });
-
-        clearSelectedIds();
-
-        // Активируем поле delete_selected_comments
-        let deleteField = form.querySelector('input[name="delete_selected_comments"]');
-        deleteField.value = '1';
-
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Произошла ошибка при подготовке данных для удаления. Попробуйте ещё раз.');
-        e.preventDefault(); // Отменяем отправку при ошибке
-        deleteBtn.disabled = false;
-        deleteBtn.textContent = 'Удалить выбранные';
-    }
+    // Обработчик для кнопки "Подтвердить удаление"
+    const confirmBtn = document.getElementById('confirm-delete-btn');
+    confirmBtn.addEventListener('click', function() {
+        //location.reload();
+        submitDeleteForm();
+    })
 });
 
-    </script>
+</script>
 <?php endif; ?>

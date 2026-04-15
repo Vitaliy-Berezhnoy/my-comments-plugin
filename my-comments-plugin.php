@@ -36,6 +36,15 @@ add_action('wp_enqueue_scripts', function() {
         [],
         '5.3.8'  // версия Bootstrap
     );
+
+    // JS Bootstrap Bundle (включает Popper.js)
+    wp_enqueue_script(
+        'bootstrap-bundle-local',
+        plugin_dir_url(__FILE__) . 'assets/js/bootstrap.bundle.min.js',
+        [], 
+        '5.3.8',
+        true // Загружаем в футере для улучшения производительности
+    );
 }, 11);  // Подключаем после стилей темы hello-biz.
 // Если ипользовать приоритет 10 (по умолчанию) тема hello-biz переопределит стили кнопок.
 
@@ -44,19 +53,6 @@ add_shortcode('show_comments', 'comments_shortcode');
 
 function comments_shortcode() {
     ob_start();
-
-    /**
-     * Если в transient есть ID комментариев, помеченных на удаление,
-     * тогда выводим форму для подтверждения удаления.
-     * и больше ни чего не выводим
-     */
-
-    $comment_ids = get_transient('comment_ids');
-    if ($comment_ids) {
-        render_comment_deletion_confirmation_form($comment_ids);
-        delete_transient('comment_ids');  // Удаляем из transient после использования
-        return ob_get_clean();
-    }
 
     // Если в transient есть статус комментария — показываем уведомление.
     $comment_status = get_transient('comment_status');
