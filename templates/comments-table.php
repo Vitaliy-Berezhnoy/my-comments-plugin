@@ -73,9 +73,15 @@
             <span id="selected-count">Выбрано для удаления: <strong>0</strong> комментариев</span>
         </div>
 
-<!-- Кнопка удаления -->
+
 <div class="d-flex gap-2 mt-3">
-    <button type="button" id="delete-selected-btn" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirm-delete-modal" disabled>
+    <!-- Кнопка удаления -->
+    <button type="button"
+            id="delete-selected-btn"
+            class="btn btn-outline-danger"
+            data-bs-toggle="modal"
+            data-bs-target="#confirm-delete-modal"
+            disabled>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-1" viewBox="0 0 16 16">
             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
             <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -83,8 +89,11 @@
         Удалить выбранные
     </button>
     
-    <!-- Новая кнопка очистки -->
-    <button type="button" id="clear-selected-btn" class="btn btn-outline-dark" disabled>
+    <!-- Кнопка очистки -->
+    <button type="button"
+            id="clear-selected-btn"
+            class="btn btn-outline-dark"
+            disabled>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle me-1" viewBox="0 0 16 16">
             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
             <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
@@ -251,15 +260,35 @@ document.addEventListener('DOMContentLoaded', function() {
         clearBtn.addEventListener('click', clearAllSelections);
     }
 
-    // Обработчик для кнопки удаления - показываем модальное окно
-    const modal = document.getElementById('confirm-delete-modal');    
-
+    // Перехват открытия модального окна
+    const modal = document.getElementById('confirm-delete-modal'); 
+    
     modal.addEventListener('show.bs.modal', function () {
         // Получаем количество ID выбранных комментариев из sessionStorage
         const savedIds = sessionStorage.getItem(STORAGE_KEY);
         const count = savedIds ? JSON.parse(savedIds).length : 0;
         // Обновляем счётчик в модальном окне
         document.getElementById('selected-count-modal').textContent = count;
+    })
+
+    // document.getElementById('cancel-delete-btn').addEventListener('click', function() {
+    //     document.getElementById('delete-selected-btn').blur();
+    //     document.body.focus();
+    //     updateButtonState();
+    // });
+
+
+     // Перехват закрытия модального окна
+    modal.addEventListener('hide.bs.modal', function() {
+        // const triggerButton = event.relatedTarget;
+        // if (triggerButton) {
+        //     triggerButton.blur();
+        // }
+        location.reload();
+    //    document.querySelector('clear-selected-btn').focus();
+    //     // Если пользователь нажал «Отмена» — сбрасываем фокус с кнопки
+    //     document.getElementById('delete-selected-btn').blur();
+    //     document.body.focus();
     })
 
     // Обработчик для кнопки "Подтвердить удаление"
