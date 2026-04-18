@@ -39,10 +39,33 @@
             <button
                 type="submit"
                 name="save_comment"
+                id="save-comment-btn"
                 class="btn btn-primary px-4 py-2"
+                disabled
             >
-                <?php esc_html_e('Отправить комментарий', 'my-comments'); ?>
+                <?php esc_html_e('Сохранить комментарий', 'my-comments'); ?>
             </button>
         </div>
     </div>
 </form>
+
+    <!-- JavaScript для активации кнопки 'Сохранить комментарий' -->
+<script>
+    function activateSaveCommentButton() {
+        const nameInput = document.getElementById('comment_name');
+        const commentTextarea = document.getElementById('comment_text');
+        const submitBtn = document.getElementById('save-comment-btn');
+
+        function toggleSendCommentButton() {
+            const isNameFilled = nameInput.value.trim().length > 0;
+            const isCommentFilled = commentTextarea.value.trim().length > 0;
+            submitBtn.disabled = !(isNameFilled || isCommentFilled);
+        }
+
+        nameInput.addEventListener('input', toggleSendCommentButton);
+        commentTextarea.addEventListener('input', toggleSendCommentButton);
+        toggleSendCommentButton();
+    }
+
+    document.addEventListener('DOMContentLoaded', activateSaveCommentButton);
+</script>
