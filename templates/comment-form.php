@@ -51,21 +51,19 @@
 
     <!-- JavaScript для активации кнопки 'Сохранить комментарий' -->
 <script>
+    // Функция для активации кнопки 'Сохранить комментарий'
     function activateSaveCommentButton() {
-        const nameInput = document.getElementById('comment_name');
-        const commentTextarea = document.getElementById('comment_text');
-        const submitBtn = document.getElementById('save-comment-btn');
+        let isNameFilled = document.getElementById('comment_name').value.trim().length > 0;
+        let isCommentFilled = document.getElementById('comment_text').value.trim().length > 0;
 
-        function toggleSendCommentButton() {
-            const isNameFilled = nameInput.value.trim().length > 0;
-            const isCommentFilled = commentTextarea.value.trim().length > 0;
-            submitBtn.disabled = !(isNameFilled || isCommentFilled);
-        }
-
-        nameInput.addEventListener('input', toggleSendCommentButton);
-        commentTextarea.addEventListener('input', toggleSendCommentButton);
-        toggleSendCommentButton();
+        document.getElementById('save-comment-btn').disabled = !(isNameFilled || isCommentFilled);
     }
 
-    document.addEventListener('DOMContentLoaded', activateSaveCommentButton);
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        activateSaveCommentButton();
+
+        document.getElementById('comment_name').addEventListener('input', activateSaveCommentButton);
+        document.getElementById('comment_text').addEventListener('input', activateSaveCommentButton);
+    });
 </script>
