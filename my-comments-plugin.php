@@ -54,13 +54,6 @@ add_shortcode('show_comments', 'comments_shortcode');
 function comments_shortcode() {
     ob_start();
 
-    // Если в transient есть статус комментария — показываем уведомление.
-    $comment_status = get_transient('comment_status');
-    if ($comment_status) {
-        include plugin_dir_path(__FILE__) . 'templates/notification.php';        
-        delete_transient('comment_status');    // Удаляем из transient после использования
-    }
-
     // Выводим форму для ввода комментария
     include plugin_dir_path(__FILE__) . 'templates/comment-form.php';
 
@@ -71,11 +64,12 @@ function comments_shortcode() {
     // Выводим таблицу с комментариями, которая также служит формой для их удаления.
     display_comments_table();
 
-    // Если в transient появилось сообщение об ошибке — показываем уведомление. 
-    $error_message = get_transient('error_message');
-    if ($error_message) {
-        include plugin_dir_path(__FILE__) . 'templates/notification-error.php';        
-        delete_transient('error_message');    // Удаляем из transient после использования
+    // Если в transient есть статус комментария
+    // показываем модальное окно с уведомлением.
+    $comment_status = get_transient('comment_status');
+    if ($comment_status) {
+        include plugin_dir_path(__FILE__) . 'templates/notification-modal.php';        
+        delete_transient('comment_status');    // Удаляем из transient после использования
     }
 
     return ob_get_clean();

@@ -78,17 +78,17 @@ function process_and_save_comment() {
     $comment = sanitize_textarea_field($_POST['comment_text']);
 
     //  Проверяем обязательные поля
+    //  Если после очистки появились пустые поля — сохраняем сообщение в transient.
     if (empty($name) || empty($comment)) {
-        //  Если есть не заполненное поле — сохраняем сообщение в transient.
         set_transient(
             'comment_status',
             [
                 'type' => 'warning',
-                'message' => 'Заполните все поля!'
+                'message' => 'При проверке данных найдены последовательности,<br>блокируемые системой безопасности.<br>Комменарий удалён!'
             ],
             180  // время жизни в секундах
         );
-        return false;  // false - запретит Редирект
+        return true;    // true - разрешит Редирект
     }
 
     // Сохраняем комментарий в одну из БД PostgreSQL или MySQL

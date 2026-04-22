@@ -17,7 +17,15 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
         $stmt = null;
     } catch(PDOException $e) {
         error_log("Error reading from the table {$table_name}" . $e->getMessage());
-        set_transient('error_message', "Ошибка чтения из таблицы с комментариями в выбранной БД.", 180);
+        //set_transient('error_message', "Ошибка чтения из таблицы с комментариями в выбранной БД.", 180);
+        set_transient(
+            'comment_status',
+            [
+                'type' => 'error',
+                'message' => 'Ошибка чтения из таблицы с комментариями в выбранной БД.'
+            ],
+            180  // время жизни в секундах
+        );
         $row = null;
         $stmt = null;
         $pdo = null;
@@ -60,7 +68,15 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
         $comments = $stmy->fetchAll(PDO::FETCH_OBJ);
     } catch(PDOException $e) {
         error_log("Error reading from the table {$table_name}" . $e->getMessage());
-        set_transient('error_message', "Ошибка чтения из таблицы с комментариями в выбранной БД.", 180);
+        //set_transient('error_message', "Ошибка чтения из таблицы с комментариями в выбранной БД.", 180);
+        set_transient(
+            'comment_status',
+            [
+                'type' => 'error',
+                'message' => 'Ошибка чтения из таблицы с комментариями в выбранной БД.'
+            ],
+            180  // время жизни в секундах
+        );
         return false;      
     }
 
@@ -82,28 +98,28 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
 }
 
 //  Функция для вывода формы подтверждения удаления комментариев
-function render_comment_deletion_confirmation_form(array $comment_ids) {
+// function render_comment_deletion_confirmation_form(array $comment_ids) {
 
-    //  $comment_ids - id комментариев помеченных на удаление
+//     //  $comment_ids - id комментариев помеченных на удаление
     
-    $pdo = get_pdo_active_db();
+//     $pdo = get_pdo_active_db();
 
-    //  Получаем комментарии, помеченные на удаление, в виде объектов
-    $table_name = get_table_name();
-    $placeholders = str_repeat('?, ', count($comment_ids) - 1) . '?';
-    $sql = "SELECT * FROM $table_name WHERE id IN ($placeholders)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($comment_ids);
-    //  Передаем комментарии в виде объектов
-    //  в форму подтверждения удаления.
-    $comments_to_delete = $stmt->fetchAll(PDO::FETCH_OBJ);
+//     //  Получаем комментарии, помеченные на удаление, в виде объектов
+//     $table_name = get_table_name();
+//     $placeholders = str_repeat('?, ', count($comment_ids) - 1) . '?';
+//     $sql = "SELECT * FROM $table_name WHERE id IN ($placeholders)";
+//     $stmt = $pdo->prepare($sql);
+//     $stmt->execute($comment_ids);
+//     //  Передаем комментарии в виде объектов
+//     //  в форму подтверждения удаления.
+//     $comments_to_delete = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-    //  Выводим форму подтверждения удаления
-    include dirname(plugin_dir_path(__FILE__)) . '/templates/confirm-delete.php';
+//     //  Выводим форму подтверждения удаления
+//     include dirname(plugin_dir_path(__FILE__)) . '/templates/confirm-delete.php';
 
-    //  Закрываем соеденение с БД
-    $stmt = null;
-    $pdo = null;
+//     //  Закрываем соеденение с БД
+//     $stmt = null;
+//     $pdo = null;
 
-    return true;
-}
+//     return true;
+// }
