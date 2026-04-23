@@ -1,7 +1,7 @@
 <?php
 
-// Функция для отображения таблицы с комментариями и формы удаления
-function display_comments_table($table_id = 'comments-table', $per_page = 5) {
+// Функция подготовки данных для отображения таблицы с комментариями и формы удаления
+function prepare_comments_table_data_for_view($table_id = 'comments-table', $per_page = 5) {
     
     // Определяем общее количество строк в таблице в БД
     $pdo = get_pdo_active_db();
@@ -68,7 +68,6 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
         $comments = $stmy->fetchAll(PDO::FETCH_OBJ);
     } catch(PDOException $e) {
         error_log("Error reading from the table {$table_name}" . $e->getMessage());
-        //set_transient('error_message', "Ошибка чтения из таблицы с комментариями в выбранной БД.", 180);
         set_transient(
             'comment_status',
             [
@@ -80,21 +79,29 @@ function display_comments_table($table_id = 'comments-table', $per_page = 5) {
         return false;      
     }
 
-    // Передаем данные для пагинации в шаблон
-    $pagination_data = [
-        'total' => $total,
-        'per_page' => $per_page,
-        'current_page' => $current_page,
-        'table_id' => $table_id
-    ];
+    
+    // $pagination_data = [
+    //     'total' => $total,
+    //     'per_page' => $per_page,
+    //     'current_page' => $current_page,
+    //     'table_id' => $table_id
+    // ];
 
-    include dirname(plugin_dir_path(__FILE__)) . '/templates/comments-table.php';
+
+    //include dirname(plugin_dir_path(__FILE__)) . '/templates/comments-table.php';
 
     //  Закрываем соеденение с БД
     $stmt = null;
     $pdo = null;
 
-    return true;
+    // Передаем данные для отображения в шаблон вывода таблицы с комментариями
+    return [
+        'comments' => $comments,
+        'total' => $total,
+        'per_page' => $per_page,
+        'current_page' => $current_page,
+        'table_id' => $table_id
+    ];
 }
 
 //  Функция для вывода формы подтверждения удаления комментариев

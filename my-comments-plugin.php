@@ -89,7 +89,8 @@ function comments_shortcode() {
     include plugin_dir_path(__FILE__) . 'templates/db-switcher.php';
 
     // Выводим таблицу с комментариями, которая также служит формой для их удаления.
-    display_comments_table();
+    $table_data = prepare_comments_table_data_for_view();    // Получаем данные для передачи в шаблон
+    include plugin_dir_path(__FILE__) . '/templates/comments-table.php';
 
     // Если в transient есть статус комментария
     // показываем модальное окно с уведомлением.

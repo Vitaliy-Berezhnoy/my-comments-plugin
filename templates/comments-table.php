@@ -3,11 +3,11 @@
  * Шаблон для отображения таблицы с комментариями (с использованием Bootstrap)
  * @var array $comments List of comment objects
  * @var string $table_id Optional table ID
- * @var array $pagination_data Data for pagination
+ * @var array $table_data Data for pagination
  */
 ?>
 
-<?php if (empty($comments)): ?>
+<?php if (empty($table_data['comments'])): ?>
     <div class="alert alert-info" role="alert">
         <?php esc_html_e('Комментариев пока нет.', 'my-comments'); ?>
     </div>
@@ -20,12 +20,12 @@
         
         <!-- Пагинация сверху -->
         <div class="d-flex justify-content-between align-items-center mb-3">            
-            <?php if (!empty($pagination_data) && $pagination_data['total'] > $pagination_data['per_page']): ?>
+            <?php if (!empty($table_data) && $table_data['total'] > $table_data['per_page']): ?>
                 <div class="text-muted small">
                     <?php printf(
                         esc_html__('Показано %d из %d комментариев', 'my-comments'),
-                        count($comments),
-                        $pagination_data['total']
+                        count($table_data['comments']),
+                        $table_data['total']
                     ); ?>
                 </div>
                 <?php include plugin_dir_path(__FILE__) . 'pagination.php'; ?>
@@ -33,7 +33,7 @@
         </div>
 
         <div class="table-responsive mt-2">
-            <table id="<?php echo htmlspecialchars($table_id); ?>" class="table table-striped table-hover table-bordered">
+            <table id="<?php echo htmlspecialchars($table_data['table_id']); ?>" class="table table-striped table-hover table-bordered">
                 <thead class="table-light">
                     <tr>
                         <th scope="col" style="width: 40px;">
@@ -46,7 +46,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($comments as $comment): ?>
+                    <?php foreach ($table_data['comments'] as $comment): ?>
                         <tr>
                             <td>
                                 <input type="checkbox" 
@@ -103,7 +103,7 @@
 </div>
 
         <!-- Пагинация снизу -->
-        <?php if (!empty($pagination_data) && $pagination_data['total'] > $pagination_data['per_page']): ?>
+        <?php if (!empty($table_data) && $table_data['total'] > $table_data['per_page']): ?>
             <div class="d-flex justify-content-center mt-4">
                 <?php include plugin_dir_path(__FILE__) . 'pagination.php'; ?>
             </div>
