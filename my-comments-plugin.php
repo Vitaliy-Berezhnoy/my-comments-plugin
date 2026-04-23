@@ -48,6 +48,33 @@ add_action('wp_enqueue_scripts', function() {
 }, 11);  // Подключаем после стилей темы hello-biz.
 // Если ипользовать приоритет 10 (по умолчанию) тема hello-biz переопределит стили кнопок.
 
+// Добовляем логирование запросов на внешние сервера
+add_action( 'http_api_debug', function( $response, $context, $transport, $args, $url ) {
+    // Проверяем запрос, внутренний (на наш домен) или внешний
+    $site_host = parse_url( get_site_url(), PHP_URL_HOST );
+    $request_host = parse_url( $url, PHP_URL_HOST );
+    
+    // Если запрос идёт на внешний сервер — логируем
+    if ( $site_host !== $request_host && ! empty( $request_host ) ) {
+        $log_entry = sprintf(
+            "[%s] ВНЕШНИЙ ЗАПРОС: %s\nИнициатор: %s\n---\n",
+            date( 'Y-m-d H:i:s' ),
+            $url,
+            $context
+        );
+        
+        // Пишем в файл лога в корне wp-content
+        file_put_contents( WP_CONTENT_DIR . '/external-requests.log', $log_entry, FILE_APPEND );
+        
+        // А также выводим в браузер, для админа (для быстрой проверки)
+        if ( current_user_can( 'manage_options' ) ) {
+            echo "<!-- ВНЕШНИЙ ЗАПРОС: {$url} -->\n";
+        }
+    }
+    
+    return $response;
+}, 10, 5 );
+
 add_shortcode('show_comments', 'comments_shortcode');
 
 
