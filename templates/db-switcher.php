@@ -52,7 +52,7 @@
         applySelectionBtn.disabled = (nameDbChoice === currentDb);
     }
 
-
+    // Инициализация при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
         toggleApplySelectionButton();
         document.querySelectorAll('input[name="db_choice"]').forEach(choice => {
