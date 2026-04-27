@@ -46,8 +46,7 @@
     // Функция активирует кнопку "Применить выбор" 
     // если выбранная БД отличается от подключенной БД
     function toggleApplySelectionButton() {
-        const selectedRadio = document.querySelectorAll('input[name="db_choice"]:checked');
-        const nameDbChoice = selectedRadio[0].id;
+        const nameDbChoice = document.querySelector('input[name="db_choice"]:checked').id;
         const applySelectionBtn =document.getElementById('apply-selection-btn');
         const currentDb = '<?php echo $current_db; ?>'; // передаём PHP‑переменную в JS
         applySelectionBtn.disabled = (nameDbChoice === currentDb);
