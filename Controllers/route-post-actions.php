@@ -4,15 +4,18 @@
 function route_post_actions() {
 
     //  Проверяем наличие POST запроса.
-    if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
-        return false;
-    }
+    if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') return;
+
+    // Инжектим зависимости
+    $pdo = get_pdo_active_db();
+    $table_name = get_table_name();
+    $commentModel = new SimpleComments($pdo, $table_name);
 
     //  Выбираем функцию обработчик POST запроса.
     $result = match (true) {
         isset($_POST['save_db_choice']) => handle_db_switch_request(),  //  запрос от формы переключения БД
-        isset($_POST['save_comment']) => process_and_save_comment(),  //  запрос от формы ввода комментария
-        isset($_POST['delete_selected_comments']) => delete_selected_comments(), // запрос от формы удаления комментариев
+        isset($_POST['save_comment']) => process_and_save_comment($commentModel),  //  запрос от формы ввода комментария
+        isset($_POST['delete_selected_comments']) => delete_selected_comments($commentModel), // запрос от формы удаления комментариев
         default => false,        
     };
     
@@ -58,13 +61,12 @@ function handle_db_switch_request() {
         false,
         true
     );
-
     return true;  // true - разрешит Редирект
 }
 
 
 // Функция для обработки POST запроса от формы ввода комментария
-function process_and_save_comment() {
+function process_and_save_comment(SimpleComments $commentModel):bool {
 
     // Проверяем nonce
     if (!isset($_POST['add_comment_nonce']) ||
@@ -92,41 +94,14 @@ function process_and_save_comment() {
     }
 
     // Сохраняем комментарий в одну из БД PostgreSQL или MySQL
-    $table_name = get_table_name();
-    $pdo = get_pdo_active_db();
-
-    $sql = "INSERT INTO $table_name (name, comment) VALUES (:name, :comment);";
-
-
-    try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-        $stmt->bindParam(':comment', $comment, PDO::PARAM_STR);
-        $stmt->execute();
-        $comment_status = [
-            'type' => 'success',
-            'message' => 'Комментарий добавлен!'
-        ];
-    } catch(PDOException $e) {
-        error_log(message: "Error writing a comment to the database: " . $e->getMessage());
-        $comment_status = [
-            'type' => 'error',
-            'message' => 'Ошибка при записи комментария в БД!'
-        ];
-    }
-    // Закрываем соеденение
-    $pdo = null;
-    $stmt = null;
-
-    // Сохраняем сообщение об успехе/ошибке в transient
-    set_transient('comment_status', $comment_status, 180);  // время жизни 180 секунд
+    $commentModel->saveComment($name, $comment);
 
     return true;    // true - разрешит Редирект
 }
 
 
 //  Функция для обработки POST‑запроса от формы удаления комментариев
-function delete_selected_comments() {
+function delete_selected_comments(SimpleComments $commentModel): bool {
 
     //  Проверяем nonce
     if (!isset($_POST['delete_comments_nonce']) ||
@@ -168,34 +143,11 @@ function delete_selected_comments() {
     }
 
     // Удаляем комментарии
+    $commentModel->deleteComments($selected_ids);
 
-    $pdo = get_pdo_active_db();
-
-    $table_name = get_table_name();
-    $placeholders = str_repeat('?, ', count($selected_ids) - 1) . '?';
-    $sql = "DELETE FROM $table_name WHERE id IN ($placeholders)";
-    
-    try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($selected_ids);
-        $deleted_count = $stmt->rowCount();
-        $comment_status = [
-            'type' => 'success',
-            'message' => "Удалено комментариев: {$deleted_count}"
-        ];
-    } catch(PDOException $e) {
-        error_log("Error when deleting a comment from the database: " . $e->getMessage());
-        $comment_status = [
-            'type' => 'error',
-            'message' => "Ошибка при удалении комментариев"
-        ];
-    }
-    // Закрываем соеденение с БД
-    $stmt = null;
-    $pdo = null;
-
-    // Сохраняем сообщение об успехе/ошибке в transient
-    set_transient('comment_status', $comment_status, 180);  // время жизни 180 секунд
+    // // Закрываем соеденение с БД
+    // $stmt = null;
+     $pdo = null;
 
     return true;   // true - разрешит Редирект
 }

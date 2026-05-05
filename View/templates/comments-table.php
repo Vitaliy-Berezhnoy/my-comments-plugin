@@ -110,7 +110,7 @@
         <?php endif; ?>
 
         <!-- Подключение модального окна подтверждения -->
-        <?php include plugin_dir_path(__FILE__) . 'confirm-delete-modal.php'; ?>
+        <?php include plugin_dir_path(__DIR__) . 'modal-window/confirm-delete.php'; ?>
     </form>
 
     <!-- JavaScript для активации кнопки удаления -->

@@ -49,7 +49,7 @@
         </div>
     </div>
     <!-- Подключение модального окна -->
-    <?php include plugin_dir_path(__FILE__) . 'fields-not-filled-modal.php' ?>
+    <?php include plugin_dir_path(__DIR__) . 'modal-window/fields-not-filled.php' ?>
 </form>
 
     <!-- JavaScript для активации кнопки 'Сохранить комментарий' -->

@@ -3,6 +3,13 @@
  * Функции для подключения к БД MySQL и PostgreSQL с использованием PDO
  */
 
+function get_pdo_active_db ():object {
+    $name_active_db = get_name_active_db();
+    if ($name_active_db === 'postgres') {
+        return pdo_connect_postgresql();
+    }
+    return pdo_connect_mysql();
+}
 function pdo_connect_mysql() {
     // Используем константы WordPress для получения данных подключения
     $db_name = DB_NAME;

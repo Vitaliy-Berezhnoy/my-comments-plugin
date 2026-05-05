@@ -6,15 +6,46 @@
  * Author: Vitaliy Berezhnoy
  */
 
+/*
+*my-comments-plugin/
+*├── Models/
+*│   ├── creating-tables-in-db.php       # Создаёт таблицы для хранения комментариев в MySQL и PostgreSQL.
+*│   ├── pdo-connect.php                 # Создаёт подключения к БД MySQL и PostgreSQL с использованием PDO
+*│   ├── SimpleComments.php              # Модель для работы с комментариями
+*│   └── table-name.php                  # Определяет имя таблицы для хранения комментариев
+*|
+*├── Controllers/
+*│   ├── name-active-db.php              # Определяет имя активной БД
+*│   ├── prepare-comments-for-view.php   # Подготовка данных для отображения таблицы с комментариями
+*│   └── route-post-actions.php          # Маршрутизация и обработка POST запросов
+*│
+*├── View/
+*│   ├── modal-window/                   # Модальные окна
+*|   |   ├── confirm-delete.php          # Окно подтверждения удаления комментариев
+*|   |   ├── fields-not-filled.php       # Окно с просьбой заполнить все поля
+*|   |   └── notification.php            # Окно для сообщений успех/внимание/ошибка 
+*|   |
+*│   └── templates/                      # Шаблоны
+*|       ├── comment-form.php            # Форма для ввода комментария
+*|       ├── comments-table.php          # Форма для вывода таблицы с комментариями
+*|       ├── db-switcher.php             # Форма для выбора БД
+*|       └── pagination.php              # Пагинация для таблицы с комментариями
+*|
+*└── my-comments-plugin.php              # Главный файл
+*/
+
 // Название таблицы для хранения комментариев одинаковое в обеих БД.
 const TABLE_NAME = 'proposals_and_comments';
 
-require_once plugin_dir_path(__FILE__) . 'includes/table_name.php';
-require_once plugin_dir_path(__FILE__) . 'includes/pdo_connect.php';
-require_once plugin_dir_path(__FILE__) . 'includes/selected_db.php';
-require_once plugin_dir_path(__FILE__) . 'includes/route-post-actions.php';
-require_once plugin_dir_path(__FILE__) . 'includes/forms-and-tables.php';
-require_once plugin_dir_path(__FILE__) . 'includes/creating-tables-in-db.php';
+require_once plugin_dir_path(__FILE__) . 'Models/SimpleComments.php';
+require_once plugin_dir_path(__FILE__) . 'Models/table-name.php';
+require_once plugin_dir_path(__FILE__) . 'Models/pdo-connect.php';
+require_once plugin_dir_path(__FILE__) . 'Models/creating-tables-in-db.php';
+require_once plugin_dir_path(__FILE__) . 'Controllers/name-active-db.php';
+require_once plugin_dir_path(__FILE__) . 'Controllers/route-post-actions.php';
+require_once plugin_dir_path(__FILE__) . 'Controllers/prepare-comments-for-view.php';
+
+
 
 /**
  * При активации плагина проверяем наличие таблиц
@@ -48,13 +79,13 @@ add_action('wp_enqueue_scripts', function() {
 }, 11);  // Подключаем после стилей темы hello-biz.
 // Если ипользовать приоритет 10 (по умолчанию) тема hello-biz переопределит стили кнопок.
 
-// Добовляем логирование запросов на внешние сервера
+// Для контроля за трансграничной передачей, логируем запросы на внешние сервера
 add_action( 'http_api_debug', function( $response, $context, $transport, $args, $url ) {
     // Проверяем запрос, внутренний (на наш домен) или внешний
     $site_host = parse_url( get_site_url(), PHP_URL_HOST );
     $request_host = parse_url( $url, PHP_URL_HOST );
     
-    // Если запрос идёт на внешний сервер — логируем
+    // Если запрос на внешний сервер — логируем
     if ( $site_host !== $request_host && ! empty( $request_host ) ) {
         $log_entry = sprintf(
             "[%s] ВНЕШНИЙ ЗАПРОС: %s\nИнициатор: %s\n---\n",
@@ -65,11 +96,6 @@ add_action( 'http_api_debug', function( $response, $context, $transport, $args, 
         
         // Пишем в файл лога в корне wp-content
         file_put_contents( WP_CONTENT_DIR . '/external-requests.log', $log_entry, FILE_APPEND );
-        
-        // А также выводим в браузер, для админа (для быстрой проверки)
-        if ( current_user_can( 'manage_options' ) ) {
-            echo "<!-- ВНЕШНИЙ ЗАПРОС: {$url} -->\n";
-        }
     }
     
     return $response;
@@ -82,21 +108,21 @@ function comments_shortcode() {
     ob_start();
 
     // Выводим форму для ввода комментария
-    include plugin_dir_path(__FILE__) . 'templates/comment-form.php';
+    include plugin_dir_path(__FILE__) . 'View/templates/comment-form.php';
 
     // Выводим форму переключателя БД
     $current_db = get_name_active_db();    // Передаём в форму имя текущей БД.
-    include plugin_dir_path(__FILE__) . 'templates/db-switcher.php';
+    include plugin_dir_path(__FILE__) . 'View/templates/db-switcher.php';
 
     // Выводим таблицу с комментариями, которая также служит формой для их удаления.
     $table_data = prepare_comments_table_data_for_view();    // Получаем данные для передачи в шаблон
-    include plugin_dir_path(__FILE__) . '/templates/comments-table.php';
+    include plugin_dir_path(__FILE__) . 'View/templates/comments-table.php';
 
     // Если в transient есть статус комментария
     // показываем модальное окно с уведомлением.
     $comment_status = get_transient('comment_status');
     if ($comment_status) {
-        include plugin_dir_path(__FILE__) . 'templates/notification-modal.php';        
+        include plugin_dir_path(__FILE__) . 'View/modal-window/notification.php';        
         delete_transient('comment_status');    // Удаляем из transient после использования
     }
 
