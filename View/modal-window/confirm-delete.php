@@ -21,7 +21,8 @@
                 <p class="fw-bold">Вы действительно хотите удалить выбранные комментарии?</p>
                 
                 <div class="alert alert-info">
-                    <strong id="selected-count-modal">0</strong> комментариев будет удалено.
+                    <span id="selected-count-modal">Выбрано для удаления: <strong>0</strong> комментариев</span>
+
                 </div>
                 
                 <p class="text-danger fw-bold">

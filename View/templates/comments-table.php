@@ -161,13 +161,22 @@ function restoreSelectedIds() {
     updateButtonState();
 }
 
+// Функция для правильного склонения слова «комментарий»
+function inflectWordComment(num) {
+    if (num === 1) return 'комментарий';
+    if (num >= 2 && num <= 4) return 'комментария';
+    return 'комментариев';
+}
+
 // Обновление счётчика выбранных комментариев
 function updateSelectionCount() {
     const savedIds = sessionStorage.getItem(STORAGE_KEY);
     const count = savedIds ? JSON.parse(savedIds).length : 0;
     const countElement = document.getElementById('selected-count');
+    const wordComment = inflectWordComment(count);
+
     if (countElement) {
-        countElement.innerHTML = `Выбрано для удаления: <strong>${count}</strong> комментариев`;
+        countElement.innerHTML = `Выбрано для удаления: <strong>${count}</strong> ${wordComment}`;
     }
 }
 
@@ -268,15 +277,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const savedIds = sessionStorage.getItem(STORAGE_KEY);
         const count = savedIds ? JSON.parse(savedIds).length : 0;
         // Обновляем счётчик в модальном окне
-        document.getElementById('selected-count-modal').textContent = count;
+        const countElement = document.getElementById('selected-count-modal');
+        const wordComment = inflectWordComment(count);
+
+        if (countElement) {
+            countElement.innerHTML = `Выбрано для удаления: <strong>${count}</strong> ${wordComment}`;
+        }
     })
-
-    // document.getElementById('cancel-delete-btn').addEventListener('click', function() {
-    //     document.getElementById('delete-selected-btn').blur();
-    //     document.body.focus();
-    //     updateButtonState();
-    // });
-
 
      // Перехват закрытия модального окна
     modal.addEventListener('hide.bs.modal', function() {
@@ -295,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmBtn = document.getElementById('confirm-delete-btn');
     confirmBtn.addEventListener('click', function() {
         //location.reload();
-        submitDeleteForm();
+        submitDeleteForm();  // Отправляем POST запрос для удаления комментариев
     })
 });
 
