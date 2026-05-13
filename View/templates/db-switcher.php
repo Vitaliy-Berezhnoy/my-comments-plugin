@@ -42,21 +42,4 @@
     </div>
 </div>
 
-<script>
-    // Функция активирует кнопку "Применить выбор" 
-    // если выбранная БД отличается от подключенной БД
-    function toggleApplySelectionButton() {
-        const nameDbChoice = document.querySelector('input[name="db_choice"]:checked').id;
-        const applySelectionBtn =document.getElementById('apply-selection-btn');
-        const currentDb = '<?php echo $current_db; ?>'; // передаём PHP‑переменную в JS
-        applySelectionBtn.disabled = (nameDbChoice === currentDb);
-    }
-
-    // Инициализация при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleApplySelectionButton();
-        document.querySelectorAll('input[name="db_choice"]').forEach(choice => {
-            choice.addEventListener('change', toggleApplySelectionButton);
-        });
-    })
-</script>
+<!-- Весь JavaScript вынесен в файл  assets/js/for-db-switcher.js-->

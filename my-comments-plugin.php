@@ -8,6 +8,16 @@
 
 /*
 *my-comments-plugin/
+*├── assets
+*│   ├── css/
+*|   |   └── bootstrap.min.css           # Mинифицированный CSS‑файл фреймворка Bootstrap
+*|   |
+*│   ├── js/
+*|   |   ├── bootstrap.bundle.min.js     # Минифицированная JavaScript‑библиотека фреймворка Bootstrap
+*|   |   ├── comment-form-script.js      #
+*|   |   ├── comments-table-script.js    #
+*|   |   └── db-switcher-script.js       #
+*|   |
 *├── Models/
 *│   ├── creating-tables-in-db.php       # Создаёт таблицы для хранения комментариев в MySQL и PostgreSQL.
 *│   ├── pdo-connect.php                 # Создаёт подключения к БД MySQL и PostgreSQL с использованием PDO
@@ -15,6 +25,8 @@
 *│   └── table-name.php                  # Определяет имя таблицы для хранения комментариев
 *|
 *├── Controllers/
+*│   ├── enqueue-bootstrap.php           # Подключение bootstrap 5
+*│   ├── enqueue-my-scripts.php          # Подключение скриптов актиации кнопок и соханения ID в sessionStorage  
 *│   ├── name-active-db.php              # Определяет имя активной БД
 *│   ├── prepare-comments-for-view.php   # Подготовка данных для отображения таблицы с комментариями
 *│   └── route-post-actions.php          # Маршрутизация и обработка POST запросов
@@ -41,6 +53,8 @@ require_once plugin_dir_path(__FILE__) . 'Models/SimpleComments.php';
 require_once plugin_dir_path(__FILE__) . 'Models/table-name.php';
 require_once plugin_dir_path(__FILE__) . 'Models/pdo-connect.php';
 require_once plugin_dir_path(__FILE__) . 'Models/creating-tables-in-db.php';
+require_once plugin_dir_path(__FILE__) . 'Controllers/enqueue-bootstrap.php';
+require_once plugin_dir_path(__FILE__) . 'Controllers/enqueue-my-scripts.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/name-active-db.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/route-post-actions.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/prepare-comments-for-view.php';
@@ -57,27 +71,12 @@ register_activation_hook( __FILE__, 'create_tables_on_activation' );
 //  Обрабатываем POST запросы
 add_action('init', 'route_post_actions');
 
-
-// Подключаем bootstrap-local
-add_action('wp_enqueue_scripts', function() {
-    // CSS
-    wp_enqueue_style(
-        'bootstrap-local',
-        plugin_dir_url(__FILE__) . 'assets/css/bootstrap.min.css',
-        [],
-        '5.3.8'  // версия Bootstrap
-    );
-
-    // JS Bootstrap Bundle (включает Popper.js)
-    wp_enqueue_script(
-        'bootstrap-bundle-local',
-        plugin_dir_url(__FILE__) . 'assets/js/bootstrap.bundle.min.js',
-        [], 
-        '5.3.8',
-        true // Загружаем в футере для улучшения производительности
-    );
-}, 11);  // Подключаем после стилей темы hello-biz.
+// Подключаем bootstrap-local после стилей темы hello-biz.
 // Если ипользовать приоритет 10 (по умолчанию) тема hello-biz переопределит стили кнопок.
+add_action('wp_enqueue_scripts', 'enqueue_bootstrap', 11);
+
+// Подключаем скрипты для обработки страницы на стороне клиента. (в браузере)
+add_action('wp_enqueue_scripts', 'my_comments_enqueue_scripts');
 
 // Для контроля за трансграничной передачей, логируем запросы на внешние сервера
 add_action( 'http_api_debug', function( $response, $context, $transport, $args, $url ) {
