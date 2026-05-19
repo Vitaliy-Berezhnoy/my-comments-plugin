@@ -14,9 +14,9 @@
 *|   |
 *│   ├── js/
 *|   |   ├── bootstrap.bundle.min.js     # Минифицированная JavaScript‑библиотека фреймворка Bootstrap
-*|   |   ├── comment-form-script.js      #
-*|   |   ├── comments-table-script.js    #
-*|   |   └── db-switcher-script.js       #
+*|   |   ├── comment-form-script.js      # Скрипт формы ввода нового комментария
+*|   |   ├── comments-table-script.js    # Скрипт формы вывода таблицы с комментариями
+*|   |   └── db-switcher-script.js       # Скрипт формы вабора активной БД
 *|   |
 *├── Models/
 *│   ├── creating-tables-in-db.php       # Создаёт таблицы для хранения комментариев в MySQL и PostgreSQL.
@@ -25,8 +25,10 @@
 *│   └── table-name.php                  # Определяет имя таблицы для хранения комментариев
 *|
 *├── Controllers/
+*│   ├── content-security-policy.php     # Функции для отправки заголовка CSP и обработки отчётов CSP
 *│   ├── enqueue-bootstrap.php           # Подключение bootstrap 5
-*│   ├── enqueue-my-scripts.php          # Подключение скриптов актиации кнопок и соханения ID в sessionStorage  
+*│   ├── enqueue-my-scripts.php          # Подключение скриптов актиации кнопок и соханения ID в sessionStorage и т.д. 
+*│   ├── log-external-http-request.php   # Логирует внешние HTTP-запросы WordPress
 *│   ├── name-active-db.php              # Определяет имя активной БД
 *│   ├── prepare-comments-for-view.php   # Подготовка данных для отображения таблицы с комментариями
 *│   └── route-post-actions.php          # Маршрутизация и обработка POST запросов
@@ -53,8 +55,10 @@ require_once plugin_dir_path(__FILE__) . 'Models/SimpleComments.php';
 require_once plugin_dir_path(__FILE__) . 'Models/table-name.php';
 require_once plugin_dir_path(__FILE__) . 'Models/pdo-connect.php';
 require_once plugin_dir_path(__FILE__) . 'Models/creating-tables-in-db.php';
+require_once plugin_dir_path(__FILE__) . 'Controllers/content-security-policy.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/enqueue-bootstrap.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/enqueue-my-scripts.php';
+require_once plugin_dir_path(__FILE__) . 'Controllers/log-external-http-request.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/name-active-db.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/route-post-actions.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/prepare-comments-for-view.php';
@@ -68,6 +72,12 @@ require_once plugin_dir_path(__FILE__) . 'Controllers/prepare-comments-for-view.
  */
 register_activation_hook( __FILE__, 'create_tables_on_activation' );
 
+// Регистрируем маршрут для приёма отчётов CSP (Content Security Policy)
+add_action('rest_api_init', 'add_csp_reports_api_endpoint');
+
+// Хук для отправки заголовка Content-Security-Policy
+add_action('send_headers', 'add_csp_header');
+
 //  Обрабатываем POST запросы
 add_action('init', 'route_post_actions');
 
@@ -78,28 +88,10 @@ add_action('wp_enqueue_scripts', 'enqueue_bootstrap', 11);
 // Подключаем скрипты для обработки страницы на стороне клиента. (в браузере)
 add_action('wp_enqueue_scripts', 'my_comments_enqueue_scripts');
 
-// Для контроля за трансграничной передачей, логируем запросы на внешние сервера
-add_action( 'http_api_debug', function( $response, $context, $transport, $args, $url ) {
-    // Проверяем запрос, внутренний (на наш домен) или внешний
-    $site_host = parse_url( get_site_url(), PHP_URL_HOST );
-    $request_host = parse_url( $url, PHP_URL_HOST );
-    
-    // Если запрос на внешний сервер — логируем
-    if ( $site_host !== $request_host && ! empty( $request_host ) ) {
-        $log_entry = sprintf(
-            "[%s] ВНЕШНИЙ ЗАПРОС: %s\nИнициатор: %s\n---\n",
-            date( 'Y-m-d H:i:s' ),
-            $url,
-            $context
-        );
-        
-        // Пишем в файл лога в корне wp-content
-        file_put_contents( WP_CONTENT_DIR . '/external-requests.log', $log_entry, FILE_APPEND );
-    }
-    
-    return $response;
-}, 10, 5 );
+// Для контроля за трансграничной передачей, логируем внешние HTTP-запросы WordPress
+add_action( 'http_api_debug', 'log_external_http_request', 10, 5 );
 
+// Регестрируем shortcode для вставки форм и шаблонов плагина на любую страницу на WordPress 
 add_shortcode('show_comments', 'comments_shortcode');
 
 
