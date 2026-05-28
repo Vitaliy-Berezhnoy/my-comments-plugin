@@ -55,7 +55,8 @@ function add_csp_header() {
         "style-src 'self' 'unsafe-inline'",
         "script-src 'self' 'unsafe-inline'",
         "img-src 'self' data:",
-        "font-src 'self' data:"
+        "font-src 'self' data:",
+        "worker-src 'self' blob:"
     ];
 
     $csp_policy = join('; ', $directives) . ';';

@@ -1,3 +1,5 @@
 .idea
 .gigaide
-templates/modal-window.php
+.vscode
+Controllers/localize-avatar-url.php
+assets/avatars

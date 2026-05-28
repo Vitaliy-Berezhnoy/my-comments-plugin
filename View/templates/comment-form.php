@@ -1,3 +1,8 @@
+<?php
+/**
+ * Форма для для ввода комментариев (с использованием Bootstrap)
+ */
+?>
 <form id="form_comment" method="post" action="" class="needs-validation">
     <?php wp_nonce_field('add_comment_action', 'add_comment_nonce'); ?>
 
@@ -51,5 +56,3 @@
     <!-- Подключение модального окна -->
     <?php include plugin_dir_path(__DIR__) . 'modal-window/fields-not-filled.php' ?>
 </form>
-
-    <!-- Весь JavaScript вынесен в файл  assets/js/for-comment-form.js-->
