@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Simple comments
  * Description: Форма и список комментариев
- * Version: 1.0.0
+ * Version: 3.0.0
  * Author: Vitaliy Berezhnoy
  */
 
 /*
 *my-comments-plugin/
-*├── assets
+*├── assets/
 *│   ├── css/
 *|   |   └── bootstrap.min.css           # Mинифицированный CSS‑файл фреймворка Bootstrap
 *|   |
@@ -58,7 +58,6 @@ require_once plugin_dir_path(__FILE__) . 'Models/creating-tables-in-db.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/content-security-policy.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/enqueue-bootstrap.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/enqueue-my-scripts.php';
-//require_once plugin_dir_path(__FILE__) . 'Controllers/localize-avatar-url.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/log-external-http-request.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/name-active-db.php';
 require_once plugin_dir_path(__FILE__) . 'Controllers/route-post-actions.php';
@@ -79,14 +78,12 @@ add_action('rest_api_init', 'add_csp_reports_api_endpoint');
 // Хук для отправки заголовка Content-Security-Policy
 add_action('send_headers', 'add_csp_header');
 
-// Фильтр для замены URL аватара на локальный файл
-//add_filter('get_avatar_url', 'localizeAvatarUrl', 999, 3);
-
 //  Обрабатываем POST запросы
 add_action('init', 'route_post_actions');
 
 // Подключаем bootstrap-local после стилей темы hello-biz.
-// Если ипользовать приоритет 10 (по умолчанию) тема hello-biz переопределит стили кнопок.
+// Если ипользовать приоритет 10 (по умолчанию) тема hello-biz переопределит стили кнопок,
+// по этому используем приоритет 11.
 add_action('wp_enqueue_scripts', 'enqueue_bootstrap', 11);
 
 // Подключаем скрипты для обработки страницы на стороне клиента. (в браузере)

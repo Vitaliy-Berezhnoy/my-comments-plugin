@@ -62,7 +62,8 @@ function add_csp_header() {
     $csp_policy = join('; ', $directives) . ';';
 
     // Собираем полный заголовок
-    $header_value = "Content-Security-Policy-Report-Only: {$csp_policy} report-uri {$report_uri};";
+    $header_value = "Content-Security-Policy: {$csp_policy} report-uri {$report_uri};";
+    //$header_value = "Content-Security-Policy-Report-Only: {$csp_policy} report-uri {$report_uri};";
 
     // Отправляем заголовок в браузер
     header($header_value);
