@@ -42,4 +42,4 @@
     </div>
 </div>
 
-<!-- Весь JavaScript вынесен в файл  assets/js/for-db-switcher.js-->
+<!-- Весь JavaScript вынесен в файл  assets/js/db-switcher-script.js-->

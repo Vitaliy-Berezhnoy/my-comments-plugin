@@ -102,7 +102,8 @@ function updateUI() {
 
 /**
  * Очищает данные о выбранных комментариях из sessionStorage.
- * Вызывается после успешной отправки формы удаления.
+ * Вызывается после успешной отправки формы удаления 
+ * или при смене БД для хранения комментариев.
  */
 function clearSelectedIds() {
     sessionStorage.removeItem(STORAGE_KEY);
@@ -205,4 +206,10 @@ document.addEventListener('DOMContentLoaded', function() {
      confirmBtn.addEventListener('click', function() {
          submitDeleteForm(); // Отправляем данные на сервер для удаления комментариев
      });
+
+     // 5. Навешиваем обработчик на кнопку "Применить выбор" в форме Выбора базы данных
+     const applySelectionBtn = document.getElementById('apply-selection-btn');
+     applySelectionBtn.addEventListener('click', function() {
+         clearSelectedIds(); // Очищаем данные о выбранных комментариях из sessionStorage
+     });     
 });
